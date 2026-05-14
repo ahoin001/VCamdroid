@@ -1,0 +1,701 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		088DBFF34D144FE6C4DEDBF6 /* NALUnitExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45DF279883C8CC6EDF830634 /* NALUnitExtractor.swift */; };
+		0BC04BD607B42663462D06A6 /* ExposureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C9351887915003BF5CC953 /* ExposureController.swift */; };
+		12A1D428D618AE5330F56DA0 /* LensController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37F3F076A703ECE67C10EBF /* LensController.swift */; };
+		1E13AB41C13499F0ECF9D685 /* StabilizationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66B026BECFFAFB9489CE998 /* StabilizationController.swift */; };
+		1F6942731586EF8EE59E7609 /* CaptureFormatSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0C182793ABC594C2F5114C /* CaptureFormatSelector.swift */; };
+		23D0BB036F91FDF29EDCF59C /* MetricBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22C4C5278F5473CF4DBF3E2 /* MetricBadge.swift */; };
+		27A256CCF9317DF974FA73D5 /* StreamingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37587C55F56F60CFDADF6C68 /* StreamingScreen.swift */; };
+		2A3CD7A8FF17F426C98D0B70 /* ErrorReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4BFFF541E130BE40C84BD9 /* ErrorReport.swift */; };
+		2CA2C9D21BC9110C935CDC0A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA5C82B451690664F19D7061 /* Theme.swift */; };
+		2EC9F40880F5BAA1436F8874 /* PacketType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19C55FC92CD7A9B9A1B02F51 /* PacketType.swift */; };
+		2EF86F5DD3069C46F7121497 /* CaptureSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D975B88BD25053486DF703F0 /* CaptureSessionManager.swift */; };
+		313B11DD8EA951996C6F96E7 /* FocusController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E65C447E410815E30F96BAC /* FocusController.swift */; };
+		3BFA5E42DD83E0CA79C5A7E4 /* ActivationDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1156DBC776764F23D8F645CA /* ActivationDecoder.swift */; };
+		3E5E056EA0673040CA74EA0A /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8D50E9AE175051BD36F1C89 /* CameraPreviewView.swift */; };
+		41B2D9878238026A636BE859 /* BonjourPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56258A1D5940D66E964BEF45 /* BonjourPublisher.swift */; };
+		4220F17C5B360635520A9F98 /* ByteCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAD790F552CFB22947E2317 /* ByteCodecTests.swift */; };
+		45CE3372D1F733176213597B /* VTH264Encoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF997E247C85507C3A91C43E /* VTH264Encoder.swift */; };
+		4D2BCD039AAF8A97E6C05D5A /* ControlCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56E75EE4117FDCD91C6310A /* ControlCommand.swift */; };
+		4D8C30FDEC21ABD997960BFA /* ControlChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF114B34C68487CF07E8272B /* ControlChannel.swift */; };
+		5502709530C409D2552D2125 /* AudioCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C065D0A1E6A807085354DD8D /* AudioCaptureManager.swift */; };
+		55CFB8ED0467E0A1862DD527 /* StreamMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0315CE94350391F14611F28B /* StreamMetrics.swift */; };
+		5C03439721273EC694950DA7 /* ErrorReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5499522EDEDCEC707ACB56C7 /* ErrorReportTests.swift */; };
+		71F5397A3CC57743CEE87629 /* StreamConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38BC516DF71BA2BB2B3070F8 /* StreamConfiguration.swift */; };
+		73D794111956A1DB50B0E947 /* StreamController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F564AF1DDAE3D8E3A951B8 /* StreamController.swift */; };
+		7FE2F6F2A75623A62D99332A /* ByteReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 539D4B9A3FF27306D89F1BBD /* ByteReader.swift */; };
+		807FD28DAD6EF779F8E269EF /* DeviceDescriptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8195DCF6DDA4EB9D75869D /* DeviceDescriptorTests.swift */; };
+		884269374BA4CB45D9A55FA3 /* StatusPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8EC9793FD365723A4C03538 /* StatusPill.swift */; };
+		89053A4D47ADAE23F18B6404 /* VideoStreamHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 001065AEA54398907E3A52DB /* VideoStreamHeader.swift */; };
+		8909A7CBF35DA6ED3AD9A8D1 /* VideoStreamHeaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FC6FC66C139CF58373A474B /* VideoStreamHeaderTests.swift */; };
+		9715E92D031683B6328E2E01 /* VCamdroidApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73C280360206AC74DEF98A67 /* VCamdroidApp.swift */; };
+		985387995B605B667CF79463 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0946EC279881463A56514B /* RootView.swift */; };
+		A5A1DF19C407DAEF66ADDB4E /* ConnectionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B23224C560C30E94418C91 /* ConnectionScreen.swift */; };
+		A92E74BB9F9F8A27859F3A78 /* AdaptiveBitrateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B154D8A29976EA25F7DF4CF0 /* AdaptiveBitrateController.swift */; };
+		AAF48838264846DDB048B3FC /* ControlPacketDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9142D80BC7CE4F9FC7C4C1B /* ControlPacketDecoder.swift */; };
+		B1718E319F0D57AE798D5A9D /* VideoStreamServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD8D33A5B39F5A23C9AFC6DE /* VideoStreamServer.swift */; };
+		B1A5B4CBB9928637EC9ECE7C /* WhiteBalanceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9A475B6AED4CD0F2A698372 /* WhiteBalanceController.swift */; };
+		B79ED4B74D7A9DE0D37AE829 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CEDA1847AD3D6B7A8A15B /* PrimaryButton.swift */; };
+		B9967D436F925B360AA332FC /* ControlPacketDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C444AB72E9CF1BDA3C85D270 /* ControlPacketDecoderTests.swift */; };
+		CB130BD562FF92CBE03D53AC /* SnapshotResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = D385D79C3E7FEC11F5CED50B /* SnapshotResponse.swift */; };
+		CD7213F27C38FB2CEFA504B9 /* CameraDeviceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF2A82D6726425968184C13 /* CameraDeviceFactory.swift */; };
+		D5FDC66ED5BF48E0A325DAE2 /* ByteWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81CECE1A04F55DA928FC276B /* ByteWriter.swift */; };
+		E79F301CA0D2388373851A28 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E6D938737FE600B7BF8AF9D /* Logger.swift */; };
+		EB1014076531265353049504 /* VideoEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15EB409985556191B9D093A6 /* VideoEncoder.swift */; };
+		FA975A8C6E2B3985E800042B /* DeviceDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5766693A9B207C5B15910EB /* DeviceDescriptor.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		29E7A50251FA840BED449476 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7A74483292A6EC6D062F4BC1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8E6474868A8B0794169365E0;
+			remoteInfo = VCamdroidiOS;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		001065AEA54398907E3A52DB /* VideoStreamHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStreamHeader.swift; sourceTree = "<group>"; };
+		0315CE94350391F14611F28B /* StreamMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamMetrics.swift; sourceTree = "<group>"; };
+		1156DBC776764F23D8F645CA /* ActivationDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivationDecoder.swift; sourceTree = "<group>"; };
+		15EB409985556191B9D093A6 /* VideoEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoEncoder.swift; sourceTree = "<group>"; };
+		19C55FC92CD7A9B9A1B02F51 /* PacketType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PacketType.swift; sourceTree = "<group>"; };
+		2A4BFFF541E130BE40C84BD9 /* ErrorReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorReport.swift; sourceTree = "<group>"; };
+		37587C55F56F60CFDADF6C68 /* StreamingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingScreen.swift; sourceTree = "<group>"; };
+		38BC516DF71BA2BB2B3070F8 /* StreamConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamConfiguration.swift; sourceTree = "<group>"; };
+		3BF2A82D6726425968184C13 /* CameraDeviceFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDeviceFactory.swift; sourceTree = "<group>"; };
+		3C0946EC279881463A56514B /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		3E6D938737FE600B7BF8AF9D /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		45DF279883C8CC6EDF830634 /* NALUnitExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NALUnitExtractor.swift; sourceTree = "<group>"; };
+		4F8195DCF6DDA4EB9D75869D /* DeviceDescriptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceDescriptorTests.swift; sourceTree = "<group>"; };
+		539D4B9A3FF27306D89F1BBD /* ByteReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ByteReader.swift; sourceTree = "<group>"; };
+		53C9351887915003BF5CC953 /* ExposureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExposureController.swift; sourceTree = "<group>"; };
+		5499522EDEDCEC707ACB56C7 /* ErrorReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorReportTests.swift; sourceTree = "<group>"; };
+		56258A1D5940D66E964BEF45 /* BonjourPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourPublisher.swift; sourceTree = "<group>"; };
+		73C280360206AC74DEF98A67 /* VCamdroidApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCamdroidApp.swift; sourceTree = "<group>"; };
+		81CECE1A04F55DA928FC276B /* ByteWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ByteWriter.swift; sourceTree = "<group>"; };
+		8E65C447E410815E30F96BAC /* FocusController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusController.swift; sourceTree = "<group>"; };
+		984A541544F889E8FB31447D /* VCamdroidiOSTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VCamdroidiOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C35D0CAE0A56B86977488A2 /* VCamdroidiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VCamdroidiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9FC6FC66C139CF58373A474B /* VideoStreamHeaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStreamHeaderTests.swift; sourceTree = "<group>"; };
+		A18CEDA1847AD3D6B7A8A15B /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
+		A22C4C5278F5473CF4DBF3E2 /* MetricBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricBadge.swift; sourceTree = "<group>"; };
+		A66B026BECFFAFB9489CE998 /* StabilizationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StabilizationController.swift; sourceTree = "<group>"; };
+		AF114B34C68487CF07E8272B /* ControlChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlChannel.swift; sourceTree = "<group>"; };
+		B154D8A29976EA25F7DF4CF0 /* AdaptiveBitrateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveBitrateController.swift; sourceTree = "<group>"; };
+		B8EC9793FD365723A4C03538 /* StatusPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPill.swift; sourceTree = "<group>"; };
+		B9142D80BC7CE4F9FC7C4C1B /* ControlPacketDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlPacketDecoder.swift; sourceTree = "<group>"; };
+		BD8D33A5B39F5A23C9AFC6DE /* VideoStreamServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStreamServer.swift; sourceTree = "<group>"; };
+		BF0C182793ABC594C2F5114C /* CaptureFormatSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFormatSelector.swift; sourceTree = "<group>"; };
+		C065D0A1E6A807085354DD8D /* AudioCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureManager.swift; sourceTree = "<group>"; };
+		C1F2CC9C7E12F5B003C2B68E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C444AB72E9CF1BDA3C85D270 /* ControlPacketDecoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlPacketDecoderTests.swift; sourceTree = "<group>"; };
+		CCAD790F552CFB22947E2317 /* ByteCodecTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ByteCodecTests.swift; sourceTree = "<group>"; };
+		D37F3F076A703ECE67C10EBF /* LensController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensController.swift; sourceTree = "<group>"; };
+		D385D79C3E7FEC11F5CED50B /* SnapshotResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotResponse.swift; sourceTree = "<group>"; };
+		D3B23224C560C30E94418C91 /* ConnectionScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionScreen.swift; sourceTree = "<group>"; };
+		D56E75EE4117FDCD91C6310A /* ControlCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlCommand.swift; sourceTree = "<group>"; };
+		D975B88BD25053486DF703F0 /* CaptureSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSessionManager.swift; sourceTree = "<group>"; };
+		DA5C82B451690664F19D7061 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		DF997E247C85507C3A91C43E /* VTH264Encoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VTH264Encoder.swift; sourceTree = "<group>"; };
+		E5766693A9B207C5B15910EB /* DeviceDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceDescriptor.swift; sourceTree = "<group>"; };
+		E8D50E9AE175051BD36F1C89 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
+		F7F564AF1DDAE3D8E3A951B8 /* StreamController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamController.swift; sourceTree = "<group>"; };
+		F9A475B6AED4CD0F2A698372 /* WhiteBalanceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhiteBalanceController.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		046E341503B949EC61966CF8 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				DDAEB2191FBE418B55797560 /* VCamdroidiOSTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		05D6C94D6C11FC3F4B5BE2CA /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				4B583EC28AA5D97C164D903A /* VCamdroidiOS */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		0BBB35F72D0FD01EB0020DFD /* Discovery */ = {
+			isa = PBXGroup;
+			children = (
+				56258A1D5940D66E964BEF45 /* BonjourPublisher.swift */,
+			);
+			path = Discovery;
+			sourceTree = "<group>";
+		};
+		0CE79F6E9FBE0B236E64A710 = {
+			isa = PBXGroup;
+			children = (
+				05D6C94D6C11FC3F4B5BE2CA /* Sources */,
+				046E341503B949EC61966CF8 /* Tests */,
+				994E2EA40CA6408124C2F255 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3C58FB605B58168E84513ED2 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				1156DBC776764F23D8F645CA /* ActivationDecoder.swift */,
+				539D4B9A3FF27306D89F1BBD /* ByteReader.swift */,
+				81CECE1A04F55DA928FC276B /* ByteWriter.swift */,
+				AF114B34C68487CF07E8272B /* ControlChannel.swift */,
+				D56E75EE4117FDCD91C6310A /* ControlCommand.swift */,
+				B9142D80BC7CE4F9FC7C4C1B /* ControlPacketDecoder.swift */,
+				E5766693A9B207C5B15910EB /* DeviceDescriptor.swift */,
+				2A4BFFF541E130BE40C84BD9 /* ErrorReport.swift */,
+				19C55FC92CD7A9B9A1B02F51 /* PacketType.swift */,
+				001065AEA54398907E3A52DB /* VideoStreamHeader.swift */,
+				BD8D33A5B39F5A23C9AFC6DE /* VideoStreamServer.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		3D06E641DF599505CEF6E27A /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				E8D50E9AE175051BD36F1C89 /* CameraPreviewView.swift */,
+				A22C4C5278F5473CF4DBF3E2 /* MetricBadge.swift */,
+				A18CEDA1847AD3D6B7A8A15B /* PrimaryButton.swift */,
+				B8EC9793FD365723A4C03538 /* StatusPill.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		4B583EC28AA5D97C164D903A /* VCamdroidiOS */ = {
+			isa = PBXGroup;
+			children = (
+				C1F2CC9C7E12F5B003C2B68E /* Info.plist */,
+				B0C6AD3E2A2F34E4F6BA6573 /* App */,
+				C5807735B5F5E592BB4FBDD7 /* CameraControls */,
+				4EA13810958789057107068D /* Capture */,
+				0BBB35F72D0FD01EB0020DFD /* Discovery */,
+				61906CDE8167E1FBF9424DD5 /* Encoding */,
+				AC651CEE700EEDB2A6571A8C /* Filters */,
+				3C58FB605B58168E84513ED2 /* Networking */,
+				99EE95BE602ACCB34872A6DC /* Resources */,
+				EB6757C6ABE0B49D0ACBC43A /* Streaming */,
+				7D2714DB3A9AF5E572BFEA17 /* UI */,
+				A5EA1FDDFED7E24C68438954 /* Utilities */,
+			);
+			path = VCamdroidiOS;
+			sourceTree = "<group>";
+		};
+		4EA13810958789057107068D /* Capture */ = {
+			isa = PBXGroup;
+			children = (
+				C065D0A1E6A807085354DD8D /* AudioCaptureManager.swift */,
+				3BF2A82D6726425968184C13 /* CameraDeviceFactory.swift */,
+				BF0C182793ABC594C2F5114C /* CaptureFormatSelector.swift */,
+				D975B88BD25053486DF703F0 /* CaptureSessionManager.swift */,
+			);
+			path = Capture;
+			sourceTree = "<group>";
+		};
+		61906CDE8167E1FBF9424DD5 /* Encoding */ = {
+			isa = PBXGroup;
+			children = (
+				45DF279883C8CC6EDF830634 /* NALUnitExtractor.swift */,
+				15EB409985556191B9D093A6 /* VideoEncoder.swift */,
+				DF997E247C85507C3A91C43E /* VTH264Encoder.swift */,
+			);
+			path = Encoding;
+			sourceTree = "<group>";
+		};
+		7D2714DB3A9AF5E572BFEA17 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				3D06E641DF599505CEF6E27A /* Components */,
+				CFF4EC4B6CF3C6BA39B19435 /* Screens */,
+				F138DD8F1D6D1147B759733B /* Theme */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		994E2EA40CA6408124C2F255 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9C35D0CAE0A56B86977488A2 /* VCamdroidiOS.app */,
+				984A541544F889E8FB31447D /* VCamdroidiOSTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		99EE95BE602ACCB34872A6DC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A5EA1FDDFED7E24C68438954 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				3E6D938737FE600B7BF8AF9D /* Logger.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		AC651CEE700EEDB2A6571A8C /* Filters */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Filters;
+			sourceTree = "<group>";
+		};
+		B0C6AD3E2A2F34E4F6BA6573 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				73C280360206AC74DEF98A67 /* VCamdroidApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C5807735B5F5E592BB4FBDD7 /* CameraControls */ = {
+			isa = PBXGroup;
+			children = (
+				53C9351887915003BF5CC953 /* ExposureController.swift */,
+				8E65C447E410815E30F96BAC /* FocusController.swift */,
+				D37F3F076A703ECE67C10EBF /* LensController.swift */,
+				A66B026BECFFAFB9489CE998 /* StabilizationController.swift */,
+				F9A475B6AED4CD0F2A698372 /* WhiteBalanceController.swift */,
+			);
+			path = CameraControls;
+			sourceTree = "<group>";
+		};
+		CFF4EC4B6CF3C6BA39B19435 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				D3B23224C560C30E94418C91 /* ConnectionScreen.swift */,
+				3C0946EC279881463A56514B /* RootView.swift */,
+				37587C55F56F60CFDADF6C68 /* StreamingScreen.swift */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		DDAEB2191FBE418B55797560 /* VCamdroidiOSTests */ = {
+			isa = PBXGroup;
+			children = (
+				CCAD790F552CFB22947E2317 /* ByteCodecTests.swift */,
+				C444AB72E9CF1BDA3C85D270 /* ControlPacketDecoderTests.swift */,
+				4F8195DCF6DDA4EB9D75869D /* DeviceDescriptorTests.swift */,
+				5499522EDEDCEC707ACB56C7 /* ErrorReportTests.swift */,
+				9FC6FC66C139CF58373A474B /* VideoStreamHeaderTests.swift */,
+			);
+			path = VCamdroidiOSTests;
+			sourceTree = "<group>";
+		};
+		EB6757C6ABE0B49D0ACBC43A /* Streaming */ = {
+			isa = PBXGroup;
+			children = (
+				B154D8A29976EA25F7DF4CF0 /* AdaptiveBitrateController.swift */,
+				D385D79C3E7FEC11F5CED50B /* SnapshotResponse.swift */,
+				38BC516DF71BA2BB2B3070F8 /* StreamConfiguration.swift */,
+				F7F564AF1DDAE3D8E3A951B8 /* StreamController.swift */,
+				0315CE94350391F14611F28B /* StreamMetrics.swift */,
+			);
+			path = Streaming;
+			sourceTree = "<group>";
+		};
+		F138DD8F1D6D1147B759733B /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				DA5C82B451690664F19D7061 /* Theme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8066C00A8E19EA7A3709C746 /* VCamdroidiOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9A24D55703094B9DD36842B7 /* Build configuration list for PBXNativeTarget "VCamdroidiOSTests" */;
+			buildPhases = (
+				337CA04FCF9670271F0E88D8 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BBCC7B6DD18775B3F6DFFFC5 /* PBXTargetDependency */,
+			);
+			name = VCamdroidiOSTests;
+			packageProductDependencies = (
+			);
+			productName = VCamdroidiOSTests;
+			productReference = 984A541544F889E8FB31447D /* VCamdroidiOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		8E6474868A8B0794169365E0 /* VCamdroidiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 506831510E4AF0CBE67173A7 /* Build configuration list for PBXNativeTarget "VCamdroidiOS" */;
+			buildPhases = (
+				3DBD4B1918FDDD1CB31E0488 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VCamdroidiOS;
+			packageProductDependencies = (
+			);
+			productName = VCamdroidiOS;
+			productReference = 9C35D0CAE0A56B86977488A2 /* VCamdroidiOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7A74483292A6EC6D062F4BC1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					8066C00A8E19EA7A3709C746 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					8E6474868A8B0794169365E0 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 90BC6E6448EED0E6DA58426B /* Build configuration list for PBXProject "VCamdroidiOS" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 0CE79F6E9FBE0B236E64A710;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 994E2EA40CA6408124C2F255 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8E6474868A8B0794169365E0 /* VCamdroidiOS */,
+				8066C00A8E19EA7A3709C746 /* VCamdroidiOSTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		337CA04FCF9670271F0E88D8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4220F17C5B360635520A9F98 /* ByteCodecTests.swift in Sources */,
+				B9967D436F925B360AA332FC /* ControlPacketDecoderTests.swift in Sources */,
+				807FD28DAD6EF779F8E269EF /* DeviceDescriptorTests.swift in Sources */,
+				5C03439721273EC694950DA7 /* ErrorReportTests.swift in Sources */,
+				8909A7CBF35DA6ED3AD9A8D1 /* VideoStreamHeaderTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3DBD4B1918FDDD1CB31E0488 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BFA5E42DD83E0CA79C5A7E4 /* ActivationDecoder.swift in Sources */,
+				A92E74BB9F9F8A27859F3A78 /* AdaptiveBitrateController.swift in Sources */,
+				5502709530C409D2552D2125 /* AudioCaptureManager.swift in Sources */,
+				41B2D9878238026A636BE859 /* BonjourPublisher.swift in Sources */,
+				7FE2F6F2A75623A62D99332A /* ByteReader.swift in Sources */,
+				D5FDC66ED5BF48E0A325DAE2 /* ByteWriter.swift in Sources */,
+				CD7213F27C38FB2CEFA504B9 /* CameraDeviceFactory.swift in Sources */,
+				3E5E056EA0673040CA74EA0A /* CameraPreviewView.swift in Sources */,
+				1F6942731586EF8EE59E7609 /* CaptureFormatSelector.swift in Sources */,
+				2EF86F5DD3069C46F7121497 /* CaptureSessionManager.swift in Sources */,
+				A5A1DF19C407DAEF66ADDB4E /* ConnectionScreen.swift in Sources */,
+				4D8C30FDEC21ABD997960BFA /* ControlChannel.swift in Sources */,
+				4D2BCD039AAF8A97E6C05D5A /* ControlCommand.swift in Sources */,
+				AAF48838264846DDB048B3FC /* ControlPacketDecoder.swift in Sources */,
+				FA975A8C6E2B3985E800042B /* DeviceDescriptor.swift in Sources */,
+				2A3CD7A8FF17F426C98D0B70 /* ErrorReport.swift in Sources */,
+				0BC04BD607B42663462D06A6 /* ExposureController.swift in Sources */,
+				313B11DD8EA951996C6F96E7 /* FocusController.swift in Sources */,
+				12A1D428D618AE5330F56DA0 /* LensController.swift in Sources */,
+				E79F301CA0D2388373851A28 /* Logger.swift in Sources */,
+				23D0BB036F91FDF29EDCF59C /* MetricBadge.swift in Sources */,
+				088DBFF34D144FE6C4DEDBF6 /* NALUnitExtractor.swift in Sources */,
+				2EC9F40880F5BAA1436F8874 /* PacketType.swift in Sources */,
+				B79ED4B74D7A9DE0D37AE829 /* PrimaryButton.swift in Sources */,
+				985387995B605B667CF79463 /* RootView.swift in Sources */,
+				CB130BD562FF92CBE03D53AC /* SnapshotResponse.swift in Sources */,
+				1E13AB41C13499F0ECF9D685 /* StabilizationController.swift in Sources */,
+				884269374BA4CB45D9A55FA3 /* StatusPill.swift in Sources */,
+				71F5397A3CC57743CEE87629 /* StreamConfiguration.swift in Sources */,
+				73D794111956A1DB50B0E947 /* StreamController.swift in Sources */,
+				55CFB8ED0467E0A1862DD527 /* StreamMetrics.swift in Sources */,
+				27A256CCF9317DF974FA73D5 /* StreamingScreen.swift in Sources */,
+				2CA2C9D21BC9110C935CDC0A /* Theme.swift in Sources */,
+				9715E92D031683B6328E2E01 /* VCamdroidApp.swift in Sources */,
+				45CE3372D1F733176213597B /* VTH264Encoder.swift in Sources */,
+				EB1014076531265353049504 /* VideoEncoder.swift in Sources */,
+				89053A4D47ADAE23F18B6404 /* VideoStreamHeader.swift in Sources */,
+				B1718E319F0D57AE798D5A9D /* VideoStreamServer.swift in Sources */,
+				B1A5B4CBB9928637EC9ECE7C /* WhiteBalanceController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BBCC7B6DD18775B3F6DFFFC5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8E6474868A8B0794169365E0 /* VCamdroidiOS */;
+			targetProxy = 29E7A50251FA840BED449476 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0278C14ABC8AD3825AA021C0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.darusc.vcamdroid.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VCamdroidiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VCamdroidiOS";
+			};
+			name = Debug;
+		};
+		2192484266D90D2E45A2E557 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		287866D99136EB088FC11906 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		329F7D94ABADBADC073FA632 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.darusc.vcamdroid.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VCamdroidiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VCamdroidiOS";
+			};
+			name = Release;
+		};
+		6C683712C8EE0D2905477488 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Sources/VCamdroidiOS/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.darusc.vcamdroid.ios;
+				SDKROOT = iphoneos;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B973CA4430807E301F1BB732 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Sources/VCamdroidiOS/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.darusc.vcamdroid.ios;
+				SDKROOT = iphoneos;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		506831510E4AF0CBE67173A7 /* Build configuration list for PBXNativeTarget "VCamdroidiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6C683712C8EE0D2905477488 /* Debug */,
+				B973CA4430807E301F1BB732 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		90BC6E6448EED0E6DA58426B /* Build configuration list for PBXProject "VCamdroidiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				287866D99136EB088FC11906 /* Debug */,
+				2192484266D90D2E45A2E557 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9A24D55703094B9DD36842B7 /* Build configuration list for PBXNativeTarget "VCamdroidiOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0278C14ABC8AD3825AA021C0 /* Debug */,
+				329F7D94ABADBADC073FA632 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 7A74483292A6EC6D062F4BC1 /* Project object */;
+}

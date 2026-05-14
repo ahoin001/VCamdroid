@@ -1,47 +1,65 @@
 #include "gui/devicesview.h"
 #include <wx/listctrl.h>
-#include <algorithm> // For std::max_element
+#include <algorithm>
 
-DevicesView::DevicesView(wxWindow* parent, const std::vector<DeviceDescriptor>& devices)
-    : wxDialog(parent, wxID_ANY, "Connected Devices", wxDefaultPosition, wxSize(600, 300))
+DevicesView::DevicesView(wxWindow* parent,
+                         const std::vector<DeviceDescriptor>& connectedDevices,
+                         const std::map<std::string, Discovery::RawDiscoveryRecord>& discoveredDevices)
+    : wxDialog(parent, wxID_ANY, "Devices", wxDefaultPosition, wxSize(650, 350))
 {
     auto sizer = new wxBoxSizer(wxVERTICAL);
 
     auto list = new wxListView(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_REPORT | wxLC_SINGLE_SEL);
 
-    // Define Columns
     list->AppendColumn("#", wxLIST_FORMAT_LEFT, 30);
     list->AppendColumn("Model Name", wxLIST_FORMAT_LEFT, 150);
-    list->AppendColumn("RTSP URL", wxLIST_FORMAT_LEFT, 220);
-    list->AppendColumn("Max Back", wxLIST_FORMAT_LEFT, 90);  // New Column
-    list->AppendColumn("Max Front", wxLIST_FORMAT_LEFT, 90); // New Column
+    list->AppendColumn("Address", wxLIST_FORMAT_LEFT, 180);
+    list->AppendColumn("Status", wxLIST_FORMAT_LEFT, 90);
+    list->AppendColumn("Max Back", wxLIST_FORMAT_LEFT, 90);
+    list->AppendColumn("Max Front", wxLIST_FORMAT_LEFT, 90);
 
-    // Helper lambda to format the maximum resolution string
     auto getMaxResString = [](const std::vector<DeviceDescriptor::Resolution>& resList) -> std::string {
         if (resList.empty()) return "-";
-
-        // Find resolution with the highest pixel count (width * height)
         auto maxRes = *std::max_element(resList.begin(), resList.end(),
             [](const DeviceDescriptor::Resolution& a, const DeviceDescriptor::Resolution& b) {
                 return (a.first * a.second) < (b.first * b.second);
             });
-
         return std::to_string(maxRes.first) + "x" + std::to_string(maxRes.second);
-        };
+    };
 
-    for (size_t i = 0; i < devices.size(); i++)
+    int row = 0;
+
+    // Connected devices.
+    for (size_t i = 0; i < connectedDevices.size(); i++)
     {
-        const auto& dev = devices[i];
-        long index = list->InsertItem(i, std::to_string(i + 1));
+        const auto& dev = connectedDevices[i];
+        long index = list->InsertItem(row, std::to_string(row + 1));
 
         list->SetItem(index, 1, dev.name());
         list->SetItem(index, 2, dev.url());
+        list->SetItem(index, 3, "Connected");
+        list->SetItem(index, 4, getMaxResString(dev.backResolutions()));
+        list->SetItem(index, 5, getMaxResString(dev.frontResolutions()));
+        row++;
+    }
 
-        // 3. Max Back Resolution
-        list->SetItem(index, 3, getMaxResString(dev.backResolutions()));
+    // Discovered-but-not-connected iOS devices.
+    for (const auto& [name, rec] : discoveredDevices)
+    {
+        bool alreadyConnected = false;
+        for (const auto& dev : connectedDevices)
+        {
+            if (dev.name() == name) { alreadyConnected = true; break; }
+        }
+        if (alreadyConnected) continue;
 
-        // 4. Max Front Resolution
-        list->SetItem(index, 4, getMaxResString(dev.frontResolutions()));
+        long index = list->InsertItem(row, std::to_string(row + 1));
+        list->SetItem(index, 1, rec.instanceName);
+        list->SetItem(index, 2, rec.host + ":" + std::to_string(rec.controlPort));
+        list->SetItem(index, 3, "Discovered");
+        list->SetItem(index, 4, "-");
+        list->SetItem(index, 5, "-");
+        row++;
     }
 
     sizer->Add(list, 1, wxEXPAND | wxALL, 10);

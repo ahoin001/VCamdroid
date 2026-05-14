@@ -4,10 +4,11 @@
 #include "adb.h"
 #include "net/serializer.h"
 
-Server::Server(int port, const ConnectionListener& connectionListener) :
+Server::Server(int port, const ConnectionListener& connectionListener, IDeviceBridge* bridge) :
 	port(port),
 	connectionListener(connectionListener),
-	acceptor(context)
+	acceptor(context),
+	bridge(bridge)
 {
 	try {
 		tcp::endpoint endpoint(tcp::v4(), port);
@@ -20,8 +21,16 @@ Server::Server(int port, const ConnectionListener& connectionListener) :
 
 		logger << "[SERVER] Initialized on port " << port << std::endl;
 		
-		adb::reverse(port);
-		adb::forward(8554);
+		if (bridge)
+		{
+			bridge->Reverse(port);
+			bridge->Forward(8554);
+		}
+		else
+		{
+			adb::reverse(port);
+			adb::forward(8554);
+		}
 	}
 	catch(std::exception& e)
 	{
@@ -120,7 +129,14 @@ void Server::Close()
 
 	logger << "[SERVER] Closed.\n";
 
-	adb::kill(port);
+	if (bridge)
+	{
+		bridge->Kill(port);
+	}
+	else
+	{
+		adb::kill(port);
+	}
 }
 
 void Server::TCPDoAccept()

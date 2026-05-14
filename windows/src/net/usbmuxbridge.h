@@ -2,30 +2,55 @@
 
 #include "net/devicebridge.h"
 
-/*
-    Concrete `IDeviceBridge` for iOS over libusbmuxd. The full implementation
-    relies on Apple Mobile Device Service (installed with iTunes / Apple
-    Devices on Windows) and the `libusbmuxd` + `libimobiledevice` vcpkg
-    packages.
+#include <map>
+#include <thread>
+#include <atomic>
+#include <mutex>
 
-    Until those dependencies are wired up, this class is a no-op that logs
-    a guidance message. Wi-Fi streaming is unaffected and works today; USB
-    becomes available once libusbmuxd is integrated (planned for Phase 4).
+#ifdef VCAMDROID_HAS_USBMUXD
+#include <usbmuxd.h>
+#endif
 
-    Plugging libusbmuxd in is a localized change:
-
-      1. vcpkg install libimobiledevice:x64-windows libusbmuxd:x64-windows
-      2. Replace the placeholders below with calls to:
-         - `usbmuxd_get_device_list_ex` to enumerate attached iOS devices
-         - `usbmuxd_connect` to obtain a tunneled socket for each port
-         - thread per-port plumbing to relay bytes to/from a host loopback
-           listener that the rest of VCamdroid binds to.
-*/
+/// Concrete `IDeviceBridge` for iOS over libusbmuxd. Tunnels TCP ports
+/// between the host and a USB-connected iOS device so the rest of the
+/// VCamdroid stack (which binds to `localhost:<port>`) works identically
+/// to the ADB path.
+///
+/// Requires:
+///   - Apple Mobile Device Service (comes with iTunes / Apple Devices)
+///   - libusbmuxd + libimobiledevice vcpkg packages
+///   - `VCAMDROID_HAS_USBMUXD` preprocessor define
 class UsbmuxBridge : public IDeviceBridge
 {
 public:
+    UsbmuxBridge();
+    ~UsbmuxBridge();
+
     bool Forward(int port) override;
     bool Reverse(int port) override;
     bool Kill(int port) override;
     const char* Name() const override { return "usbmuxd"; }
+
+    /// Returns true if at least one iOS device is USB-attached.
+    bool HasConnectedDevice() const;
+
+private:
+#ifdef VCAMDROID_HAS_USBMUXD
+    struct Relay
+    {
+        std::atomic<bool> running{ true };
+        std::thread thread;
+        int listenSocket = -1;
+        int deviceHandle = -1;
+    };
+
+    std::mutex relayMutex;
+    std::map<int, std::unique_ptr<Relay>> relays;
+
+    uint32_t cachedDeviceHandle = 0;
+    bool deviceEnumerated = false;
+
+    bool EnsureDevice();
+    void RelayWorker(int port, Relay* relay);
+#endif
 };

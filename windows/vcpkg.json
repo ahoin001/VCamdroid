@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "vcamdroid",
+  "version-string": "1.0.0",
+  "description": "VCamdroid - Use your phone as a Windows webcam",
+  "dependencies": [
+    "asio",
+    "wxwidgets",
+    {
+      "name": "ffmpeg",
+      "features": ["avcodec", "avformat", "avutil", "swscale"]
+    }
+  ],
+  "features": {
+    "ios-usb": {
+      "description": "iOS USB tunneling via libusbmuxd (requires iTunes/Apple Devices on Windows)",
+      "dependencies": [
+        "libusbmuxd",
+        "libimobiledevice"
+      ]
+    }
+  }
+}

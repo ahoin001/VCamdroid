@@ -35,7 +35,7 @@ bool Application::OnInit()
 	}
 
 	try {
-		server = std::make_unique<Server>(6969, *this);
+		server = std::make_unique<Server>(6969, *this, &adbBridge);
 		server->Start();
 	}
 	catch (const std::exception& e) {
@@ -48,6 +48,14 @@ bool Application::OnInit()
 
 		// Exit application if the server fails to start
 		return false;
+	}
+
+	// If an iOS device is connected via USB, set up port forwarding through usbmuxd.
+	if (usbmuxBridge.HasConnectedDevice())
+	{
+		logger << "[app] iOS device detected via USB, setting up USB tunnel.\n";
+		usbmuxBridge.Forward(6969);
+		usbmuxBridge.Forward(8554);
 	}
 
 	mainWindow = new Window(server->GetHostInfo());
@@ -83,6 +91,34 @@ bool Application::OnInit()
 			}
 		}
 	);
+
+	// Start mDNS discovery for iOS devices on the LAN.
+	mdnsBrowser = std::make_unique<Discovery::MdnsBrowser>(
+		[this](const Discovery::RawDiscoveryRecord& record) {
+			{
+				std::lock_guard<std::mutex> lock(discoveredDevicesMutex);
+				discoveredDevices[record.instanceName] = record;
+			}
+			// Update UI on the main thread.
+			if (mainWindow) {
+				mainWindow->GetEventHandler()->CallAfter([this]() {
+					UpdateAvailableDevices();
+				});
+			}
+		},
+		[this](const std::string& instanceName) {
+			{
+				std::lock_guard<std::mutex> lock(discoveredDevicesMutex);
+				discoveredDevices.erase(instanceName);
+			}
+			if (mainWindow) {
+				mainWindow->GetEventHandler()->CallAfter([this]() {
+					UpdateAvailableDevices();
+				});
+			}
+		}
+	);
+	mdnsBrowser->Start();
 
 	BindEventListeners();
 	mainWindow->Show();
@@ -223,13 +259,29 @@ void Application::UpdateAvailableDevices() const
 
 	const auto& devices = rtspManager->GetDescriptors();
 
-	if (devices.empty())
+	// Collect discovered-but-not-connected iOS device names.
+	std::vector<std::string> discoveredNames;
 	{
-		// Logic Change: If empty, add placeholder and select it
+		std::lock_guard<std::mutex> lock(discoveredDevicesMutex);
+		for (const auto& [name, rec] : discoveredDevices)
+		{
+			bool alreadyConnected = false;
+			for (const auto& desc : devices)
+			{
+				if (desc.name() == name) { alreadyConnected = true; break; }
+			}
+			if (!alreadyConnected)
+				discoveredNames.push_back(name);
+		}
+	}
+
+	bool hasAny = !devices.empty() || !discoveredNames.empty();
+
+	if (!hasAny)
+	{
 		choice->Append("No devices");
 		choice->SetSelection(0);
 
-		// Optional: Clear stats since nothing is playing
 		if (mainWindow->GetStatsText())
 			mainWindow->GetStatsText()->SetLabelText("----p@--fps\n00.0Mbps");
 	}
@@ -237,18 +289,20 @@ void Application::UpdateAvailableDevices() const
 	{
 		choice->Append("Select device");
 
-		// Repopulate
+		// Connected devices first.
 		for (auto& desc : devices)
 			choice->Append(desc.name());
 
+		// Discovered-but-not-connected iOS devices (via mDNS).
+		for (const auto& name : discoveredNames)
+			choice->Append(name + "  (Wi-Fi)");
+
 		if (currentSelectionIndex >= 0 && currentSelectionIndex < (int)devices.size())
 		{
-			// Only restore selection if valid
 			choice->SetSelection(currentSelectionIndex + 1);
 		}
 		else
 		{
-			// If the previously selected device is gone, or we stopped, select nothing
 			choice->SetSelection(0);
 		}
 	}
@@ -260,7 +314,12 @@ void Application::OnMenuEvent(wxCommandEvent& event)
 	{
 		case Window::MenuIDs::DEVICES:
 		{
-			DevicesView devlistview(mainWindow, rtspManager->GetDescriptors());
+			std::map<std::string, Discovery::RawDiscoveryRecord> discovered;
+			{
+				std::lock_guard<std::mutex> lock(discoveredDevicesMutex);
+				discovered = discoveredDevices;
+			}
+			DevicesView devlistview(mainWindow, rtspManager->GetDescriptors(), discovered);
 			devlistview.ShowModal();
 			break;
 		}
@@ -304,12 +363,57 @@ void Application::OnMenuEvent(wxCommandEvent& event)
 	}
 }
 
+void Application::OnDiscoveredDeviceSelected(const Discovery::RawDiscoveryRecord& record)
+{
+	logger << "[app] Connecting to discovered iOS device: " << record.instanceName
+	       << " @ " << record.host << ":" << record.controlPort << "\n";
+
+	mainWindow->GetTaskbarIcon()->ShowBalloon(
+		"Connecting to " + record.instanceName,
+		"Attempting Wi-Fi connection to " + record.host + ":" + std::to_string(record.controlPort),
+		5, wxICON_INFORMATION);
+}
+
 void Application::OnSourceChanged(wxEvent& event)
 {
-	int deviceId = mainWindow->GetSourceChoice()->GetSelection() - 1;
+	int selectionIndex = mainWindow->GetSourceChoice()->GetSelection() - 1;
 
-	// Safety: Handle empty list or "No devices" placeholder
-	if (deviceId == wxNOT_FOUND || rtspManager->GetDescriptors().empty())
+	if (selectionIndex == wxNOT_FOUND)
+		return;
+
+	const auto& connectedDevices = rtspManager->GetDescriptors();
+
+	// Check if this selection is a discovered-but-not-connected device.
+	if (selectionIndex >= (int)connectedDevices.size())
+	{
+		// This is a discovered iOS device from mDNS.
+		int discoveredIndex = selectionIndex - (int)connectedDevices.size();
+		std::vector<Discovery::RawDiscoveryRecord> discovered;
+		{
+			std::lock_guard<std::mutex> lock(discoveredDevicesMutex);
+			for (const auto& [name, rec] : discoveredDevices)
+			{
+				bool alreadyConnected = false;
+				for (const auto& desc : connectedDevices)
+				{
+					if (desc.name() == name) { alreadyConnected = true; break; }
+				}
+				if (!alreadyConnected)
+					discovered.push_back(rec);
+			}
+		}
+
+		if (discoveredIndex >= 0 && discoveredIndex < (int)discovered.size())
+			OnDiscoveredDeviceSelected(discovered[discoveredIndex]);
+
+		// Reset selection since this device isn't connected yet.
+		mainWindow->GetSourceChoice()->SetSelection(0);
+		return;
+	}
+
+	int deviceId = selectionIndex;
+
+	if (connectedDevices.empty() || deviceId < 0 || deviceId >= (int)connectedDevices.size())
 		return;
 
 	const auto& descriptor = rtspManager->GetDescriptors()[deviceId];
@@ -367,8 +471,14 @@ void Application::OnWindowCloseEvent(wxCloseEvent& event)
 	// Hide window for responsive UI close feeling
 	mainWindow->Hide();
 
+	if (mdnsBrowser) mdnsBrowser->Stop();
+
 	rtspManager.reset();
 	server->Close();
+
+	// Tear down USB tunnels.
+	usbmuxBridge.Kill(6969);
+	usbmuxBridge.Kill(8554);
 
 	Settings::UpdateDeviceStates(stateRegistry);
 	Settings::Save();

@@ -4,8 +4,10 @@
 #include <thread>
 #include <asio.hpp>
 #include <string>
+#include <memory>
 
 #include "connection.h"
+#include "net/devicebridge.h"
 
 class Server : std::enable_shared_from_this<Server>
 {
@@ -28,11 +30,13 @@ public:
 		unsigned short port;
 	};
 
-	Server(int port, const ConnectionListener& connectionListener);
+	/// Constructs the server with an optional device bridge. When a bridge
+	/// is provided, port forwarding is delegated to it instead of using
+	/// raw adb:: calls. Pass nullptr for no bridge (iOS Wi-Fi path).
+	Server(int port, const ConnectionListener& connectionListener,
+	       IDeviceBridge* bridge = nullptr);
 
-	/// <summary>
 	/// Gets host device's info (name, IPv4 address and port)
-	/// </summary>
 	HostInfo GetHostInfo();
 
 	void Send(int id, const unsigned char* bytes, size_t size) const;
@@ -43,8 +47,8 @@ private:
 	int port;
 
 	const ConnectionListener& connectionListener;
+	IDeviceBridge* bridge = nullptr;
 
-	//asio::executor_work_guard<asio::io_context::executor_type> guard;
 	asio::io_context context;
 
 	tcp::acceptor acceptor;
