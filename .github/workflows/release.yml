@@ -78,6 +78,8 @@ jobs:
           name: ios-build
           path: ios/VCamdroidiOS/build/VCamdroidiOS-*.ipa
 
+  # windows-latest = VS 2022 + MSVC v143. VCamdroid.vcxproj uses PlatformToolset v143
+  # so CI matches softcam and the hosted runner (v145 / VS 2026 preview is not installed).
   build-windows:
     runs-on: windows-latest
     steps:
