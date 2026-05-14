@@ -87,10 +87,13 @@ jobs:
 
       - uses: microsoft/setup-msbuild@v2
 
+      # vcpkg must live inside the repo workspace (not runner.temp) so git submodule
+      # checks used by run-vcpkg do not fail. builtin-baseline in windows/vcpkg.json
+      # is required by run-vcpkg@v11 for manifest installs.
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
-          vcpkgDirectory: "${{ runner.temp }}/vcpkg"
+          vcpkgDirectory: "${{ github.workspace }}/vcpkg"
           vcpkgJsonGlob: "windows/vcpkg.json"
 
       - name: Build Softcam

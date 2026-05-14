@@ -3,6 +3,7 @@
   "name": "vcamdroid",
   "version-string": "1.3.3",
   "description": "VCamdroid - Use your phone as a Windows webcam",
+  "builtin-baseline": "57d5665ca81cb063946952dbd58f5190cb48216e",
   "dependencies": [
     "asio",
     "wxwidgets",
