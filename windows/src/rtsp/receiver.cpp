@@ -17,11 +17,11 @@ namespace RTSP
 		avformat_network_deinit();
 	}
 
-	void Receiver::Start(std::string url, std::string protocol, int width, int height) 
+	void Receiver::Start(const std::string& url, const std::string& protocol, int width, int height)
 	{
 		if (isRunning)
 			return;
-	
+
 		this->rtspProtocol = protocol;
 		this->rtspUrl = url;
 		isRunning = true;

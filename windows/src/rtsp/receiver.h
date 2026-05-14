@@ -2,6 +2,7 @@
 
 #include "ffmpeginterrupt.h"
 #include "ffmpeg.h"
+#include "streaming/framereceiver.h"
 
 #include <memory>
 #include <thread>
@@ -10,35 +11,19 @@
 
 namespace RTSP
 {
-    class Receiver 
+    class Receiver : public Streaming::IFrameReceiver
     {
     public:
 
-        struct Stats
-        {
-            int width, height;
-            int fps;
-            double bitrate;
-        };
-
-        /// <summary>
-        /// Callback for when the full frame is received. 
-        /// Received frame will be in RGB 24bit format.
-        /// </summary>
-        /// <param name="bytes">Raw RGB data</param>
-        using OnFrameReceivedCallback = std::function<void(AVFrame* frame)>;
-
-		/// <summary>
-		/// Callback for when new stats are available. 
-		/// Called approximately once per second.
-		/// </summary>
-		using OnStatsReceivedCallback = std::function<void(const Stats& stats)>;
+        using Stats = Streaming::IFrameReceiver::Stats;
+        using OnFrameReceivedCallback = Streaming::IFrameReceiver::OnFrameReceivedCallback;
+        using OnStatsReceivedCallback = Streaming::IFrameReceiver::OnStatsReceivedCallback;
 
         Receiver(OnFrameReceivedCallback frameReceivedListener, OnStatsReceivedCallback statsReceivedCallback);
         virtual ~Receiver();
 
-        void Start(std::string url, std::string protocol, int width, int height);
-        void Stop();
+        void Start(const std::string& url, const std::string& protocol, int width, int height) override;
+        void Stop() override;
 
     private:
 

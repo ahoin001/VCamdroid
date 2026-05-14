@@ -49,9 +49,28 @@ namespace Serializer
 		offset += 2 + name.size();
 		auto url = std::string((const char*)& bytes[offset + 2], ReadInt16(bytes + offset));
 
-		// Default protocol is udp. If it is a usb connection (via adb) switch to tcp
-		std::string protocol = "udp";
-		if (url.find("127.0.0.1") != std::string::npos)
+		// iOS clients use the vcmd:// URL scheme. Everything else is treated
+		// as Android RTSP (preserving v1 behaviour).
+		const bool isVcmd =
+			url.size() >= 7 &&
+			(url[0] == 'v' || url[0] == 'V') &&
+			(url[1] == 'c' || url[1] == 'C') &&
+			(url[2] == 'm' || url[2] == 'M') &&
+			(url[3] == 'd' || url[3] == 'D') &&
+			url[4] == ':' && url[5] == '/' && url[6] == '/';
+
+		DeviceDescriptor::DeviceType deviceType = isVcmd
+			? DeviceDescriptor::DeviceType::iOS
+			: DeviceDescriptor::DeviceType::Android;
+
+		DeviceDescriptor::Transport transport = isVcmd
+			? DeviceDescriptor::Transport::RawTcp
+			: DeviceDescriptor::Transport::Rtsp;
+
+		// Default protocol is udp. If it is a usb connection (via adb) switch to tcp.
+		// iOS streams are always raw TCP so the textual protocol is left as "tcp".
+		std::string protocol = isVcmd ? "tcp" : "udp";
+		if (!isVcmd && url.find("127.0.0.1") != std::string::npos)
 		{
 			protocol = "tcp";
 		}
@@ -108,7 +127,7 @@ namespace Serializer
 			filters[cat].push_back(name);
 		}
 
-		return DeviceDescriptor(name, url, protocol, frontResolutions, backResolutions, filters);
+		return DeviceDescriptor(name, url, protocol, deviceType, transport, frontResolutions, backResolutions, filters);
 	}
 
 	std::vector<uint8_t> SerializeStreamOptions(const StreamOptions& state)

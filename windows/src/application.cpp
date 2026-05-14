@@ -2,6 +2,7 @@
 
 #include "gui/imgadjdlg.h"
 #include "gui/streamconfigdlg.h"
+#include "gui/ioscontrolspanel.h"
 #include "gui/devicesview.h"
 #include "gui/qrconview.h"
 #include "settings.h"
@@ -141,17 +142,36 @@ void Application::BindEventListeners()
 	mainWindow->GetZoomInButton()->Bind(wxEVT_BUTTON, [&](const wxEvent& arg) {
 		if (rtspManager->GetStreamingDevice() < 0) return;
 		auto& options = GetCurrentDeviceStreamOptions();
-		options.zoom = std::min(10.0f, options.zoom + 0.5f);
-		mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.zoom));
-		rtspManager->Zoom(options.zoom);
+		const auto& desc = rtspManager->GetDescriptors()[rtspManager->GetStreamingDevice()];
+
+		if (desc.isiOS()) {
+			// On iOS the lens slider is continuous and capped by the actual
+			// device's optical range; clamp generously and let the iPhone
+			// re-clamp to its true maximum.
+			options.iosLensZoom = std::min(10.0f, options.iosLensZoom + 0.5f);
+			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.iosLensZoom));
+			rtspManager->SetLensZoom(options.iosLensZoom);
+		} else {
+			options.zoom = std::min(10.0f, options.zoom + 0.5f);
+			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.zoom));
+			rtspManager->Zoom(options.zoom);
+		}
 	});
 
 	mainWindow->GetZoomOutButton()->Bind(wxEVT_BUTTON, [&](const wxEvent& arg) {
 		if (rtspManager->GetStreamingDevice() < 0) return;
 		auto& options = GetCurrentDeviceStreamOptions();
-		options.zoom = std::max(1.0f, options.zoom - 0.5f);
-		mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.zoom));
-		rtspManager->Zoom(options.zoom);
+		const auto& desc = rtspManager->GetDescriptors()[rtspManager->GetStreamingDevice()];
+
+		if (desc.isiOS()) {
+			options.iosLensZoom = std::max(0.5f, options.iosLensZoom - 0.5f);
+			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.iosLensZoom));
+			rtspManager->SetLensZoom(options.iosLensZoom);
+		} else {
+			options.zoom = std::max(1.0f, options.zoom - 0.5f);
+			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.zoom));
+			rtspManager->Zoom(options.zoom);
+		}
 	});
 
 	mainWindow->GetSnapshotButton()->Bind(wxEVT_BUTTON, [&](const wxEvent& arg) {
@@ -322,8 +342,24 @@ void Application::OnSourceChanged(wxEvent& event)
 
 	rtspManager->Connect2Stream(deviceId, state);
 
-	// Update UI Zoom Label to match state
-	mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", state.zoom));
+	// Update UI Zoom Label to match state. iOS devices track lens zoom
+	// across the entire optical range, Android tracks digital zoom.
+	const float displayedZoom = descriptor.isiOS() ? state.iosLensZoom : state.zoom;
+	mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", displayedZoom));
+
+	// Push the cached iOS state to the freshly-activated device so the user
+	// sees the same image they saw last time.
+	if (descriptor.isiOS()) {
+		rtspManager->SetLensZoom(state.iosLensZoom);
+		if (state.iosExposureMode == StreamOptions::ExposureMode::Manual)
+			rtspManager->SetExposure(state.iosExposureDurationSeconds, state.iosExposureISO);
+		rtspManager->SetExposureCompensation(state.iosExposureCompensation);
+		if (state.iosWhiteBalanceMode == StreamOptions::WhiteBalanceMode::Manual)
+			rtspManager->SetWhiteBalance(state.iosWhiteBalanceTemperatureK, state.iosWhiteBalanceTint);
+		rtspManager->SetStabilizationMode(state.iosStabilizationMode);
+		if (state.iosFocusLockPosition >= 0.0f)
+			rtspManager->SetFocusLock(state.iosFocusLockPosition);
+	}
 }
 
 void Application::OnWindowCloseEvent(wxCloseEvent& event)
@@ -431,7 +467,81 @@ void Application::ShowStreamConfigDialog(wxCommandEvent& event)
 	config.focusMode = state.focusMode;
 	config.h265Enabled = state.h265Enabled;
 
-	StreamConfigDlg dlg(mainWindow, desc, state.backCameraActive, config);
+	const StreamOptions* iosOptions = desc.isiOS() ? &state : nullptr;
+	StreamConfigDlg dlg(mainWindow, desc, state.backCameraActive, config, iosOptions);
+
+	if (auto* iosPanel = dlg.GetIosPanel())
+	{
+		iosPanel->Bind(EVT_IOS_LENS_ZOOM_CHANGED, [this, deviceName](wxCommandEvent& e)
+		{
+			auto* panel = static_cast<IosControlsPanel*>(e.GetEventObject());
+			auto zoom = panel->GetLensZoom();
+			stateRegistry[deviceName].iosLensZoom = zoom;
+			rtspManager->SetLensZoom(zoom);
+		});
+
+		iosPanel->Bind(EVT_IOS_EXPOSURE_CHANGED, [this, deviceName](wxCommandEvent& e)
+		{
+			auto* panel = static_cast<IosControlsPanel*>(e.GetEventObject());
+			auto& s = stateRegistry[deviceName];
+			s.iosExposureMode = panel->IsManualExposure()
+				? StreamOptions::ExposureMode::Manual
+				: StreamOptions::ExposureMode::Auto;
+			s.iosExposureDurationSeconds = panel->GetExposureDurationSeconds();
+			s.iosExposureISO = panel->GetExposureISO();
+			s.iosExposureCompensation = panel->GetExposureCompensation();
+
+			if (s.iosExposureMode == StreamOptions::ExposureMode::Manual)
+				rtspManager->SetExposure(s.iosExposureDurationSeconds, s.iosExposureISO);
+
+			rtspManager->SetExposureCompensation(s.iosExposureCompensation);
+		});
+
+		iosPanel->Bind(EVT_IOS_WHITE_BALANCE_CHANGED, [this, deviceName](wxCommandEvent& e)
+		{
+			auto* panel = static_cast<IosControlsPanel*>(e.GetEventObject());
+			auto& s = stateRegistry[deviceName];
+			s.iosWhiteBalanceMode = panel->IsManualWhiteBalance()
+				? StreamOptions::WhiteBalanceMode::Manual
+				: StreamOptions::WhiteBalanceMode::Auto;
+			s.iosWhiteBalanceTemperatureK = panel->GetWhiteBalanceTemperatureK();
+			s.iosWhiteBalanceTint = panel->GetWhiteBalanceTint();
+
+			if (s.iosWhiteBalanceMode == StreamOptions::WhiteBalanceMode::Manual)
+				rtspManager->SetWhiteBalance(s.iosWhiteBalanceTemperatureK, s.iosWhiteBalanceTint);
+		});
+
+		iosPanel->Bind(EVT_IOS_FOCUS_LOCK_CHANGED, [this, deviceName](wxCommandEvent& e)
+		{
+			auto* panel = static_cast<IosControlsPanel*>(e.GetEventObject());
+			auto& s = stateRegistry[deviceName];
+			s.iosFocusLockPosition = panel->GetFocusLockPosition();
+			rtspManager->SetFocusLock(s.iosFocusLockPosition);
+		});
+
+		iosPanel->Bind(EVT_IOS_STABILIZATION_MODE_CHANGED, [this, deviceName](wxCommandEvent& e)
+		{
+			auto* panel = static_cast<IosControlsPanel*>(e.GetEventObject());
+			auto& s = stateRegistry[deviceName];
+			s.iosStabilizationMode = panel->GetStabilizationMode();
+			rtspManager->SetStabilizationMode(s.iosStabilizationMode);
+		});
+
+		iosPanel->Bind(EVT_IOS_RESET_AUTO, [this, deviceName](wxCommandEvent&)
+		{
+			auto& s = stateRegistry[deviceName];
+			s.iosExposureMode = StreamOptions::ExposureMode::Auto;
+			s.iosWhiteBalanceMode = StreamOptions::WhiteBalanceMode::Auto;
+			s.iosFocusLockPosition = -1.0f;
+			rtspManager->ResetCameraToAuto();
+		});
+
+		iosPanel->Bind(EVT_IOS_STUDIO_MODE_CHANGED, [this](wxCommandEvent& e)
+		{
+			auto* panel = static_cast<IosControlsPanel*>(e.GetEventObject());
+			rtspManager->SetStudioMode(panel->IsStudioModeEnabled());
+		});
+	}
 
 	dlg.Bind(EVT_STREAM_RESOLUTION_CHANGED, [this, deviceName](wxCommandEvent& e) 
 	{

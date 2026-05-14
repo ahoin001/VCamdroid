@@ -1,6 +1,7 @@
 #include "gui/streamconfigdlg.h"
 #include <wx/statline.h>
 
+#include "gui/ioscontrolspanel.h"
 #include "rtsp/manager.h"
 
 wxDEFINE_EVENT(EVT_STREAM_CONFIG_CHANGED, wxCommandEvent);
@@ -11,8 +12,9 @@ wxDEFINE_EVENT(EVT_STREAM_BITRATE_CHANGED, wxCommandEvent);
 StreamConfigDlg::StreamConfigDlg(wxWindow* parent,
     const DeviceDescriptor& device,
     bool isBackCamera,
-    const Config& currentConfig)
-    : wxDialog(parent, wxID_ANY, "Stream Configuration", wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
+    const Config& currentConfig,
+    const StreamOptions* iosOptions)
+    : wxDialog(parent, wxID_ANY, "Stream Configuration", wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
     auto mainSizer = new wxBoxSizer(wxVERTICAL);
 
@@ -169,6 +171,16 @@ StreamConfigDlg::StreamConfigDlg(wxWindow* parent,
     hwBox->Add(flashCheck, 0, wxALL, 10);
 
     mainSizer->Add(hwBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10);
+
+
+    // ---------------------------------------------------------
+    // GROUP 3: iOS PREMIUM CONTROLS (only for iOS devices)
+    // ---------------------------------------------------------
+    if (device.isiOS() && iosOptions != nullptr)
+    {
+        iosPanel = new IosControlsPanel(this, *iosOptions);
+        mainSizer->Add(iosPanel, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    }
 
 
     // ---------------------------------------------------------

@@ -155,10 +155,14 @@ xcopy "$(ProjectDir)3rdparty\softcam\examples\softcam_installer\x64\Release\soft
     <ClCompile Include="src\gui\devicesview.cpp" />
     <ClCompile Include="src\gui\imgadjdlg.cpp" />
     <ClCompile Include="src\gui\qrconview.cpp" />
+    <ClCompile Include="src\discovery\mdnsdiscovery.cpp" />
+    <ClCompile Include="src\gui\ioscontrolspanel.cpp" />
     <ClCompile Include="src\gui\streamconfigdlg.cpp" />
     <ClCompile Include="src\net\connection.cpp" />
     <ClCompile Include="src\net\serializer.cpp" />
+    <ClCompile Include="src\net\usbmuxbridge.cpp" />
     <ClCompile Include="src\rtsp\manager.cpp" />
+    <ClCompile Include="src\streaming\rawtcpreceiver.cpp" />
     <ClCompile Include="src\canvas.cpp" />
     <ClCompile Include="src\main.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -204,6 +208,8 @@ xcopy "$(ProjectDir)3rdparty\softcam\examples\softcam_installer\x64\Release\soft
     <ClInclude Include="src\gui\devicesview.h" />
     <ClInclude Include="src\gui\imgadjdlg.h" />
     <ClInclude Include="src\gui\qrconview.h" />
+    <ClInclude Include="src\discovery\mdnsdiscovery.h" />
+    <ClInclude Include="src\gui\ioscontrolspanel.h" />
     <ClInclude Include="src\gui\streamconfigdlg.h" />
     <ClInclude Include="src\gui\window.h" />
     <ClInclude Include="src\logger.h" />
@@ -214,9 +220,14 @@ xcopy "$(ProjectDir)3rdparty\softcam\examples\softcam_installer\x64\Release\soft
     <ClInclude Include="src\rtsp\constants.h" />
     <ClInclude Include="src\rtsp\ffmpeg.h" />
     <ClInclude Include="src\rtsp\ffmpeginterrupt.h" />
+    <ClInclude Include="src\net\adbbridge.h" />
+    <ClInclude Include="src\net\devicebridge.h" />
+    <ClInclude Include="src\net\usbmuxbridge.h" />
     <ClInclude Include="src\rtsp\manager.h" />
     <ClInclude Include="src\rtsp\receiver.h" />
     <ClInclude Include="src\rtsp\streamoptions.h" />
+    <ClInclude Include="src\streaming\framereceiver.h" />
+    <ClInclude Include="src\streaming\rawtcpreceiver.h" />
     <ClInclude Include="src\settings.h" />
     <ClInclude Include="src\snapshotmanager.h" />
     <ClInclude Include="src\video\directshowscaler.h" />

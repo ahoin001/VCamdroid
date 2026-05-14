@@ -5,6 +5,9 @@
 #include <string>
 
 #include "net/devicedescriptor.h"
+#include "rtsp/streamoptions.h"
+
+class IosControlsPanel;
 
 wxDECLARE_EVENT(EVT_STREAM_CONFIG_CHANGED, wxCommandEvent);
 wxDECLARE_EVENT(EVT_STREAM_RESOLUTION_CHANGED, wxCommandEvent);
@@ -31,8 +34,15 @@ public:
         bool flashEnabled;
     };
 
-    StreamConfigDlg(wxWindow* parent, const DeviceDescriptor& device, bool isBackCamera, const Config& currentConfig);
+    StreamConfigDlg(wxWindow* parent,
+                    const DeviceDescriptor& device,
+                    bool isBackCamera,
+                    const Config& currentConfig,
+                    const StreamOptions* iosOptions = nullptr);
     ~StreamConfigDlg();
+
+    /// Returns the embedded iOS controls panel, or `nullptr` for Android devices.
+    IosControlsPanel* GetIosPanel() const { return iosPanel; }
 
     bool IsAdaptiveBitrate() const;
     int GetStaticBitrate() const;
@@ -45,6 +55,9 @@ public:
     bool IsH265Enabled() const { return codecChoice->GetSelection() == 1; }
 
 private:
+    // iOS premium controls (nullptr for Android devices).
+    IosControlsPanel* iosPanel = nullptr;
+
     // Controls
     wxChoice* resChoice;
     wxChoice* fpsChoice;

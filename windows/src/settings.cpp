@@ -168,7 +168,21 @@ void Settings::Save()
             }
 
             f << "E:=" << state.activeEffectFilter << std::endl;
-            
+
+            // iOS premium control state. Written for every device but only
+            // meaningful for iOS-backed entries; cheap to persist and lets
+            // users come back to their last lens/exposure/WB setup.
+            f << "ios_lens_zoom="    << state.iosLensZoom << std::endl;
+            f << "ios_exp_mode="     << static_cast<int>(state.iosExposureMode) << std::endl;
+            f << "ios_exp_dur="      << state.iosExposureDurationSeconds << std::endl;
+            f << "ios_exp_iso="      << state.iosExposureISO << std::endl;
+            f << "ios_exp_comp="     << state.iosExposureCompensation << std::endl;
+            f << "ios_wb_mode="      << static_cast<int>(state.iosWhiteBalanceMode) << std::endl;
+            f << "ios_wb_temp="      << state.iosWhiteBalanceTemperatureK << std::endl;
+            f << "ios_wb_tint="      << state.iosWhiteBalanceTint << std::endl;
+            f << "ios_stab_mode="    << state.iosStabilizationMode << std::endl;
+            f << "ios_focus_lock="   << state.iosFocusLockPosition << std::endl;
+
             f << std::endl;
         }
     }
@@ -219,6 +233,22 @@ void Settings::ParseDeviceLine(StreamOptions& state, const std::string& key, con
     { 
         state.activeEffectFilter = val;
     }
+
+    // iOS premium controls
+    else if (key == "ios_lens_zoom")  state.iosLensZoom = static_cast<float>(std::atof(val.c_str()));
+    else if (key == "ios_exp_mode")   state.iosExposureMode = std::atoi(val.c_str()) == 1
+                                          ? StreamOptions::ExposureMode::Manual
+                                          : StreamOptions::ExposureMode::Auto;
+    else if (key == "ios_exp_dur")    state.iosExposureDurationSeconds = static_cast<float>(std::atof(val.c_str()));
+    else if (key == "ios_exp_iso")    state.iosExposureISO = static_cast<float>(std::atof(val.c_str()));
+    else if (key == "ios_exp_comp")   state.iosExposureCompensation = static_cast<float>(std::atof(val.c_str()));
+    else if (key == "ios_wb_mode")    state.iosWhiteBalanceMode = std::atoi(val.c_str()) == 1
+                                          ? StreamOptions::WhiteBalanceMode::Manual
+                                          : StreamOptions::WhiteBalanceMode::Auto;
+    else if (key == "ios_wb_temp")    state.iosWhiteBalanceTemperatureK = static_cast<float>(std::atof(val.c_str()));
+    else if (key == "ios_wb_tint")    state.iosWhiteBalanceTint = static_cast<float>(std::atof(val.c_str()));
+    else if (key == "ios_stab_mode")  state.iosStabilizationMode = std::atoi(val.c_str());
+    else if (key == "ios_focus_lock") state.iosFocusLockPosition = static_cast<float>(std::atof(val.c_str()));
 }
 
 void Settings::CachePreservedLines(const std::string& path)
