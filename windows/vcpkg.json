@@ -10,15 +10,8 @@
     {
       "name": "ffmpeg",
       "features": ["avcodec", "avformat", "avutil", "swscale"]
-    }
-  ],
-  "features": {
-    "ios-usb": {
-      "description": "iOS USB tunneling via libusbmuxd (requires iTunes/Apple Devices on Windows)",
-      "dependencies": [
-        "libusbmuxd",
-        "libimobiledevice"
-      ]
-    }
-  }
+    },
+    "libusbmuxd",
+    "libimobiledevice"
+  ]
 }

@@ -82,6 +82,9 @@ jobs:
   # so CI matches softcam and the hosted runner (v145 / VS 2026 preview is not installed).
   build-windows:
     runs-on: windows-latest
+    env:
+      # Required for VCamdroid.vcxproj vcpkg.props / vcpkg.targets (same path as run-vcpkg).
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
     steps:
       - uses: actions/checkout@v4
         with:
