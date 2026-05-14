@@ -1,0 +1,175 @@
+VCamdroid iOS Support: Definitive Implementation Plan
+Guiding Principles (Non-Negotiable)
+Zero-copy pipeline or nothing. Every frame stays on the GPU from capture to encode. If a filter can't run on Metal/Core Image, it doesn't ship.
+Custom TCP, not RTSP. Length-prefixed H.264 NAL units over raw TCP. The existing RTSP path stays for Android; iOS gets its own optimized path.
+Virtual triple camera only. No lens "switching." The user sees a zoom slider, Apple handles the lens transitions seamlessly underneath.
+No feature ships half-baked. Each phase produces a fully functional, shippable milestone.
+Architecture: iOS Side
+AVCaptureSession (.builtInTripleCamera)
+    │
+    ▼
+AVCaptureVideoDataOutput (CMSampleBuffer, YUV 420v)
+    │
+    ├──► [Optional] Metal/Core Image GPU filter pipeline
+    │
+    ▼
+CVPixelBuffer (NEVER leaves GPU memory)
+    │
+    ▼
+VTCompressionSession (H.264, low-latency rate control, real-time)
+    │
+    ▼
+CMBlockBuffer → Extract NAL units
+    │
+    ▼
+TCP Server (length-prefix framing)
+    │
+    ├── Port A: Video stream (raw H.264 NAL units)
+    └── Port B: Control channel (same binary protocol as Android)
+Critical detail: The AVCaptureVideoDataOutput delivers CMSampleBuffer containing a CVPixelBuffer backed by an IOSurface. When you pass this directly to VTCompressionSession via VTCompressionSessionEncodeFrame, the encoder reads from the same GPU memory. Zero copies. The CPU never touches pixel data.
+
+Architecture: Windows Side (Changes)
+┌─────────────────────────────────────────────────────┐
+│  device_bridge.h (NEW - replaces adb.h)             │
+│  ┌──────────────┐  ┌──────────────────────────────┐ │
+│  │ AdbBridge    │  │ UsbmuxBridge                 │ │
+│  │ (Android)    │  │ (iOS via libusbmuxd)         │ │
+│  │ reverse()    │  │ connect(device_handle, port) │ │
+│  │ forward()    │  │ list_devices()               │ │
+│  │ kill()       │  │ disconnect()                 │ │
+│  └──────────────┘  └──────────────────────────────┘ │
+├─────────────────────────────────────────────────────┤
+│  stream_receiver.h (NEW - parallel to rtsp/)        │
+│  ┌──────────────────────────────────────────────────┐│
+│  │ TCPStreamReceiver                                ││
+│  │ - Reads length-prefixed NAL units from TCP       ││
+│  │ - Feeds raw H.264 to FFmpeg avcodec directly     ││
+│  │ - Same OnFrameReceivedCallback interface         ││
+│  └──────────────────────────────────────────────────┘│
+├─────────────────────────────────────────────────────┤
+│  RTSP::Receiver (UNCHANGED - Android path)          │
+├─────────────────────────────────────────────────────┤
+│  RTSP::Manager → StreamManager (RENAMED/EXTENDED)   │
+│  - Detects device type from DeviceDescriptor        │
+│  - Routes to TCPStreamReceiver (iOS)                │
+│  -    or to RTSP::Receiver (Android)                │
+│  - Extended command types for iOS controls           │
+└─────────────────────────────────────────────────────┘
+Phase Order (4 Phases)
+Phase 1: The Pipeline (Get pixels from iPhone to Windows)
+This is the hardest phase. Everything else is layering controls on top.
+
+iOS App:
+
+CameraManager.swift - AVCaptureSession with .builtInWideAngleCamera (just the main lens to start)
+H264Encoder.swift - VTCompressionSession wrapper, zero-copy, low-latency rate control
+StreamServer.swift - TCP server, length-prefix framing: [4-byte uint32 length][NAL unit bytes]
+ControlChannel.swift - TCP server on separate port, receives command bytes, same PacketType constants
+DeviceDescriptor.swift - Serializes device info in the same binary format the Windows client expects, with a new deviceType field
+StreamViewController.swift - Foreground camera preview, keep-screen-alive
+Windows Client:
+
+device_bridge.h / usbmux_bridge.cpp - Link against libusbmuxd, enumerate iOS devices, tunnel TCP ports
+tcp_stream_receiver.h/.cpp - Read length-prefixed NAL units, feed to avcodec_send_packet / avcodec_receive_frame
+DeviceDescriptor - Add deviceType field, parse iOS extended capabilities
+Manager - Route iOS devices to TCPStreamReceiver, Android devices to RTSP::Receiver
+Milestone: Plug iPhone in via USB, launch iOS app, see the camera feed in the Windows client preview and in OBS via the virtual webcam.
+
+Phase 2: Premium Camera Controls
+This is what makes it better than "just works."
+
+iOS App:
+
+Switch to .builtInTripleCamera virtual device
+LensController.swift - Query virtualDeviceSwitchOverVideoZoomFactors, expose zoom via videoZoomFactor (seamless lens transitions)
+ExposureController.swift - Manual exposure duration, ISO, exposure compensation
+WhiteBalanceController.swift - Temperature/tint control via setWhiteBalanceModeLocked
+FocusController.swift - Auto/manual focus, tap-to-focus with lens position
+Stabilization mode selection (.off, .standard, .cinematic, .cinematicExtended)
+Windows Client:
+
+New PacketType commands: LENS_ZOOM, EXPOSURE, WHITE_BALANCE, ISO, STABILIZATION_MODE
+Extended StreamConfigDlg with iOS-specific control panel
+Lens zoom slider (continuous, not discrete buttons)
+Exposure/WB/ISO sliders with live feedback
+Milestone: Full manual camera control from the Windows UI. Smooth zoom from 0.5x ultra-wide to 5x telephoto with seamless lens handoff.
+
+Phase 3: Premium UX & Polish
+This is what makes users stay.
+
+iOS App:
+
+Studio Mode (power saver): Pitch-black OLED screen, minimum brightness, tiny floating indicator, isIdleTimerDisabled = true
+Connection status overlay: Show connection type (USB/Wi-Fi), streaming resolution, FPS, bitrate
+Wi-Fi discovery: Bonjour/mDNS service advertisement so the Windows client can auto-discover the iPhone on the network (replaces QR code scanning)
+GPU filter pipeline: Core Image filters for brightness, contrast, saturation, color temperature adjustments (all GPU-accelerated, zero-copy)
+Front camera support with mirror control
+Windows Client:
+
+Auto-discovery of iOS devices on the network via mDNS
+Device type icons in the source dropdown (Android/iPhone)
+Unified filter controls that work across both platforms
+Milestone: A polished, battery-efficient experience that rivals Camo for daily use.
+
+Phase 4: Feature Parity & Advanced
+Nice-to-haves that round out the product.
+
+H.265/HEVC support on iOS (VideoToolbox supports it natively)
+Adaptive bitrate for Wi-Fi connections
+Snapshot capture from iOS stream
+Audio capture from iPhone microphone (via AVCaptureAudioDataOutput)
+Multiple simultaneous iOS devices
+Settings persistence per-device (already exists for Android, extend to iOS)
+TCP Stream Protocol Specification
+This is the protocol the iOS app will use instead of RTSP:
+
+Video Stream (Port 8554):
+┌──────────────────────────────────────────────┐
+│ [4 bytes: uint32_t NAL length, big-endian]   │
+│ [N bytes: raw H.264 NAL unit]                │
+│ [4 bytes: uint32_t NAL length, big-endian]   │
+│ [N bytes: raw H.264 NAL unit]                │
+│ ...                                          │
+└──────────────────────────────────────────────┘
+First message after connection (before NAL units):
+┌──────────────────────────────────────────────┐
+│ [4 bytes: magic 0x56434D44 ("VCMD")]         │
+│ [1 byte: stream version (0x01)]              │
+│ [1 byte: codec (0x01=H.264, 0x02=H.265)]    │
+│ [2 bytes: uint16_t width, big-endian]        │
+│ [2 bytes: uint16_t height, big-endian]       │
+│ [1 byte: fps]                                │
+└──────────────────────────────────────────────┘
+Control Channel (Port 6969):
+Same binary command protocol as Android.
+Same PacketType byte constants.
+Extended with new iOS-specific commands starting at 0x20:
+  0x20: LENS_ZOOM      [4 bytes: float zoom factor]
+  0x21: EXPOSURE        [4 bytes: float duration] [4 bytes: float ISO]
+  0x22: WHITE_BALANCE   [4 bytes: float temp] [4 bytes: float tint]
+  0x23: STUDIO_MODE     [1 byte: enabled]
+Using the same control port (6969) and same command structure means the Windows Server class, Connection class, and the entire TCP infrastructure remain completely unchanged. Only the Manager command handler grows.
+
+Key Technical Decisions (Why)
+Decision	Why
+Custom TCP over RTSP
+Eliminates ~5-15ms of RTP/RTSP overhead. One less layer of packetization, no SDP negotiation, no RTP sequence tracking.
+YUV 420v pixel format throughout
+This is what the camera sensor produces and what VideoToolbox expects. Converting to BGRA (as some apps do) wastes 30-40% of encoding CPU time.
+Big-endian wire format
+Matches the existing Android protocol (ByteBuffer defaults to big-endian). Consistency across platforms.
+Same port numbers (6969/8554)
+The Windows client already opens these. The device bridge just changes how traffic reaches them (ADB tunnel vs usbmuxd tunnel).
+.builtInTripleCamera only
+Individual camera selection (.builtInTelephotoCamera) causes session restarts and frame drops. The virtual device provides seamless zoom with zero interruption.
+Bonjour over QR codes for iOS
+iPhones can't scan QR codes while simultaneously streaming camera. Bonjour is automatic and requires zero user interaction.
+libusbmuxd (C library) over iproxy
+Embedding the library directly into the Windows C++ client means no external process to manage, no race conditions, no "is iproxy running?" state tracking.
+What You Need Before Starting
+Mac with Xcode - confirmed
+iTunes or Apple Devices app on your Windows PC - installs Apple Mobile Device Service (required for USB tunneling)
+vcpkg addition: libusbmuxd and libimobiledevice for the Windows build
+iOS deployment target: iOS 16.0+ (covers iPhone 16 Pro, drops ancient devices you don't care about)
+This plan is ready to execute. When you want to start building, switch to Agent mode and I'll begin with Phase 1 - the core pipeline. I'd recommend starting with the iOS app since it's the greenfield component, then wiring up the Windows changes to receive from it.
+
