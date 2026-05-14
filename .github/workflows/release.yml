@@ -96,9 +96,16 @@ jobs:
           vcpkgDirectory: "${{ github.workspace }}/vcpkg"
           vcpkgJsonGlob: "windows/vcpkg.json"
 
-      - name: Build Softcam
+      # Build only library targets — test projects need NuGet GoogleTest restore on CI.
+      - name: Build Softcam (libraries only)
         run: |
           msbuild windows/3rdparty/softcam/softcam.sln `
+            /t:"BaseClasses;softcamcore;softcam" `
+            /p:Configuration=Release /p:Platform=x64 /m
+
+      - name: Build Softcam installer
+        run: |
+          msbuild windows/3rdparty/softcam/examples/softcam_installer/softcam_installer.sln `
             /p:Configuration=Release /p:Platform=x64 /m
 
       - name: Build VCamdroid
