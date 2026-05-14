@@ -1,0 +1,49 @@
+name: iOS unsigned IPA
+description: XcodeGen, archive unsigned, package IPA, upload artifact
+inputs:
+  version_suffix:
+    description: Version label without leading v (e.g. 1.4.0 or pr-12)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install XcodeGen
+      shell: bash
+      run: brew install xcodegen
+
+    - name: Generate Xcode project
+      shell: bash
+      working-directory: ios/VCamdroidiOS
+      run: xcodegen generate
+
+    - name: Archive (unsigned)
+      shell: bash
+      working-directory: ios/VCamdroidiOS
+      run: |
+        xcodebuild archive \
+          -project VCamdroidiOS.xcodeproj \
+          -scheme VCamdroidiOS \
+          -configuration Release \
+          -archivePath ./build/VCamdroidiOS.xcarchive \
+          -destination "generic/platform=iOS" \
+          CODE_SIGN_IDENTITY="-" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          -quiet
+
+    - name: Package IPA
+      shell: bash
+      working-directory: ios/VCamdroidiOS
+      run: |
+        mkdir -p build/Payload
+        cp -r build/VCamdroidiOS.xcarchive/Products/Applications/VCamdroidiOS.app build/Payload/
+        cd build
+        zip -rq "VCamdroidiOS-${{ inputs.version_suffix }}.ipa" Payload/
+        rm -rf Payload
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ios-build
+        path: ios/VCamdroidiOS/build/VCamdroidiOS-${{ inputs.version_suffix }}.ipa
+        retention-days: 14

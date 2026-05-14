@@ -1,0 +1,52 @@
+name: Windows release bundle
+description: vcpkg manifest, softcam libs + installer, VCamdroid, package.bat, zip
+inputs:
+  version_suffix:
+    description: Version label without leading v (e.g. 1.4.0 or pr-12)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: microsoft/setup-msbuild@v2
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: "${{ github.workspace }}/vcpkg"
+        vcpkgJsonGlob: "windows/vcpkg.json"
+
+    - name: Build Softcam (libraries only)
+      shell: pwsh
+      run: |
+        msbuild windows/3rdparty/softcam/softcam.sln `
+          /t:"BaseClasses;softcamcore;softcam" `
+          /p:Configuration=Release /p:Platform=x64 /m
+
+    - name: Build Softcam installer
+      shell: pwsh
+      run: |
+        msbuild windows/3rdparty/softcam/examples/softcam_installer/softcam_installer.sln `
+          /p:Configuration=Release /p:Platform=x64 /m
+
+    - name: Build VCamdroid
+      shell: pwsh
+      run: |
+        msbuild windows/VCamdroid.sln `
+          /p:Configuration=Release /p:Platform=x64 /m
+
+    - name: Package
+      shell: cmd
+      run: package.bat
+
+    - name: Zip release
+      shell: pwsh
+      run: |
+        $suffix = "${{ inputs.version_suffix }}"
+        Compress-Archive -Path VCamdroid/* -DestinationPath "VCamdroid-Windows-x64-$suffix.zip"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: VCamdroid-Windows-x64-${{ inputs.version_suffix }}.zip
+        retention-days: 14

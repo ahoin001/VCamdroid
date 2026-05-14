@@ -1,0 +1,35 @@
+name: Android release APK
+description: Build release APK and upload versioned artifact
+inputs:
+  version_suffix:
+    description: Version label without leading v (e.g. 1.4.0 or pr-12)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: "17"
+
+    - uses: gradle/actions/setup-gradle@v4
+
+    - name: Build release APK
+      shell: bash
+      working-directory: android
+      run: |
+        chmod +x gradlew
+        ./gradlew assembleRelease
+
+    - name: Rename APK
+      shell: bash
+      run: |
+        cp android/app/build/outputs/apk/release/app-release.apk \
+          "VCamdroid-Android-${{ inputs.version_suffix }}.apk"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: android-build
+        path: VCamdroid-Android-${{ inputs.version_suffix }}.apk
+        retention-days: 14

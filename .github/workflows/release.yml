@@ -4,6 +4,10 @@ on:
   push:
     tags: ["v*"]
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -13,125 +17,47 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Artifact version from tag
+        id: meta
+        shell: bash
+        run: echo "ver=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/android-build
         with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Build release APK
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease
-
-      - name: Rename APK
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          cp android/app/build/outputs/apk/release/app-release.apk "VCamdroid-Android-${VERSION}.apk"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: android-build
-          path: VCamdroid-Android-*.apk
+          version_suffix: ${{ steps.meta.outputs.ver }}
 
   build-ios:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Artifact version from tag
+        id: meta
+        shell: bash
+        run: echo "ver=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Generate Xcode project
-        working-directory: ios/VCamdroidiOS
-        run: xcodegen generate
-
-      - name: Archive (unsigned)
-        working-directory: ios/VCamdroidiOS
-        run: |
-          xcodebuild archive \
-            -project VCamdroidiOS.xcodeproj \
-            -scheme VCamdroidiOS \
-            -configuration Release \
-            -archivePath ./build/VCamdroidiOS.xcarchive \
-            -destination "generic/platform=iOS" \
-            CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            -quiet
-
-      - name: Package IPA
-        working-directory: ios/VCamdroidiOS
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          mkdir -p build/Payload
-          cp -r build/VCamdroidiOS.xcarchive/Products/Applications/VCamdroidiOS.app build/Payload/
-          cd build
-          zip -rq "VCamdroidiOS-${VERSION}.ipa" Payload/
-          rm -rf Payload
-
-      - uses: actions/upload-artifact@v4
+      - uses: ./.github/actions/ios-build
         with:
-          name: ios-build
-          path: ios/VCamdroidiOS/build/VCamdroidiOS-*.ipa
+          version_suffix: ${{ steps.meta.outputs.ver }}
 
-  # windows-latest = VS 2022 + MSVC v143. VCamdroid.vcxproj uses PlatformToolset v143
-  # so CI matches softcam and the hosted runner (v145 / VS 2026 preview is not installed).
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 120
     env:
-      # Required for VCamdroid.vcxproj vcpkg.props / vcpkg.targets (same path as run-vcpkg).
       VCPKG_ROOT: ${{ github.workspace }}/vcpkg
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - uses: microsoft/setup-msbuild@v2
+      - name: Artifact version from tag
+        id: meta
+        shell: bash
+        run: echo "ver=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      # vcpkg must live inside the repo workspace (not runner.temp) so git submodule
-      # checks used by run-vcpkg do not fail. builtin-baseline in windows/vcpkg.json
-      # is required by run-vcpkg@v11 for manifest installs.
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
+      - uses: ./.github/actions/windows-build
         with:
-          vcpkgDirectory: "${{ github.workspace }}/vcpkg"
-          vcpkgJsonGlob: "windows/vcpkg.json"
-
-      # Build only library targets — test projects need NuGet GoogleTest restore on CI.
-      - name: Build Softcam (libraries only)
-        run: |
-          msbuild windows/3rdparty/softcam/softcam.sln `
-            /t:"BaseClasses;softcamcore;softcam" `
-            /p:Configuration=Release /p:Platform=x64 /m
-
-      - name: Build Softcam installer
-        run: |
-          msbuild windows/3rdparty/softcam/examples/softcam_installer/softcam_installer.sln `
-            /p:Configuration=Release /p:Platform=x64 /m
-
-      - name: Build VCamdroid
-        run: |
-          msbuild windows/VCamdroid.sln `
-            /p:Configuration=Release /p:Platform=x64 /m
-
-      - name: Package
-        shell: cmd
-        run: package.bat
-
-      - name: Zip release
-        shell: pwsh
-        run: |
-          $version = "${{ github.ref_name }}".TrimStart("v")
-          Compress-Archive -Path VCamdroid/* -DestinationPath "VCamdroid-Windows-x64-${version}.zip"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-build
-          path: VCamdroid-Windows-x64-*.zip
+          version_suffix: ${{ steps.meta.outputs.ver }}
 
   release:
     needs: [build-android, build-ios, build-windows]

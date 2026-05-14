@@ -32,6 +32,7 @@
 8. [**Reporting Issues**](#reporting-issues)
 9. [**Technical Architecture**](#technical-architecture)
 10. [**Contributing**](#contributing)
+11. [**Releases and CI**](#releases-and-ci)
 
 ## Description
 
@@ -289,6 +290,11 @@ The pipeline is engineered for performance, offloading image processing to the p
 <p align="center"><img src="imgs/pipeline.png" width="50%"></p>
 
 
+## Releases and CI
+
+Automated **GitHub Releases** (Android APK, unsigned iOS IPA, Windows zip), **pull request CI**, and hosted-runner assumptions are documented in [**docs/CI-AND-RELEASE.md**](docs/CI-AND-RELEASE.md). From the repo root: `make ship-patch` (or `ship-minor` / `ship-major`) bumps the version, commits, tags, and pushes.
+
+
 ## Contributing
 
 We actively welcome contributions! Whether you're fixing a bug, optimizing performance, or adding a cool new feature, please feel free to fork the repository and submit a Pull Request.
@@ -299,7 +305,7 @@ We actively welcome contributions! Whether you're fixing a bug, optimizing perfo
 * `ios/`: The iOS app (Swift/SwiftUI). Handles AVFoundation capture, VideoToolbox encoding, and TCP streaming with premium camera controls.
 * `windows/`: The Visual Studio solution (C++). Contains the Desktop Client GUI, RTSP/TCP receivers, and the DirectShow filter logic.
 * `obs-plugin/`: Scaffold for a dedicated OBS Studio source plugin (future enhancement).
-* `docs/`: Protocol specification and performance documentation.
+* `docs/`: Protocol specification, performance notes, and [**CI / release**](docs/CI-AND-RELEASE.md) for maintainers.
 
 ---
 

@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "android/**"
+      - "ios/**"
+      - "windows/**"
+      - ".github/**"
+      - "package.bat"
+      - "install.bat"
+      - "install_apk.bat"
+      - "uninstall.bat"
+      - "VERSION"
+      - "Makefile"
+      - "scripts/**"
+  push:
+    branches: [main, master]
+    paths:
+      - "android/**"
+      - "ios/**"
+      - "windows/**"
+      - ".github/**"
+      - "package.bat"
+      - "install.bat"
+      - "install_apk.bat"
+      - "uninstall.bat"
+      - "VERSION"
+      - "Makefile"
+      - "scripts/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Artifact label
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ver=pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ver=main-$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: ./.github/actions/android-build
+        with:
+          version_suffix: ${{ steps.meta.outputs.ver }}
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Artifact label
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ver=pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ver=main-$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: ./.github/actions/ios-build
+        with:
+          version_suffix: ${{ steps.meta.outputs.ver }}
+
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Artifact label
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ver=pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ver=main-$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: ./.github/actions/windows-build
+        with:
+          version_suffix: ${{ steps.meta.outputs.ver }}
