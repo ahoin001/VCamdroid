@@ -1,2 +1,8 @@
 dist
 VCamdroid
+
+# Build artifacts
+*.ipa
+*.xcarchive
+ios/VCamdroidiOS/build/
+ios/VCamdroidiOS/VCamdroidiOS.xcodeproj/
