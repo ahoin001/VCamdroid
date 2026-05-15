@@ -24,6 +24,8 @@
 	<array>
 		<string>_vcamdroid._tcp</string>
 	</array>
+	<key>NSCameraPortraitEffectEnabled</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>VCamdroid uses the camera to stream video to your PC.</string>
 	<key>NSLocalNetworkUsageDescription</key>

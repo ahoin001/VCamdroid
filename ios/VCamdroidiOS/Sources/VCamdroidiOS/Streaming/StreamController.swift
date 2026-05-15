@@ -60,6 +60,8 @@ public final class StreamController: ObservableObject {
     private let portraitProcessor = PortraitEffectProcessor()
     private var abrController: AdaptiveBitrateController?
     private var useUsbLoopback = false
+    /// Tracks `systemPortraitBokehActive` so we resync the software processor when the user toggles Video Effects Portrait.
+    private var lastAppliedHardwarePortraitPath: Bool?
 
     /// Optional audio capture pipeline. Lazily created when Windows toggles
     /// `MIC_ENABLED` so apps that never enable the mic pay nothing.
@@ -131,17 +133,44 @@ public final class StreamController: ObservableObject {
         await connect(host: "127.0.0.1", controlPort: 6969, videoPort: 8554)
     }
 
-    public func setPortraitMode(enabled: Bool, strength: Int) {
+    /// - Parameter promptVideoEffects: When true, opens Apple’s Video Effects UI so the user can enable system Portrait.
+    ///   Windows-driven commands pass `false` so the sheet doesn’t appear on every slider tick.
+    public func setPortraitMode(enabled: Bool, strength: Int, promptVideoEffects: Bool = false) {
         let clamped = min(100, max(0, strength))
-        portraitProcessor.setEnabled(enabled, strength: clamped)
-        Task { @MainActor in
-            self.portraitModeEnabled = enabled
-            self.portraitStrength = clamped
+        if enabled, promptVideoEffects {
+            Self.presentSystemVideoEffectsPicker()
         }
         reconfigureNoRestart {
             $0.portraitModeEnabled = enabled
             $0.portraitStrength = clamped
         }
+        syncSoftwarePortraitProcessorWithConfig(currentConfigurationSnapshot)
+        Task { @MainActor in
+            self.portraitModeEnabled = enabled
+            self.portraitStrength = clamped
+        }
+    }
+
+    /// System UI for Portrait / Center Stage, etc. The user toggles Portrait there (not via a simple device setter).
+    public static func presentSystemVideoEffectsPicker() {
+        Task { @MainActor in
+            if #available(iOS 15.0, *) {
+                AVCaptureDevice.showSystemUserInterface(.videoEffects)
+            }
+        }
+    }
+
+    /// True when Video Effects Portrait is active on the incoming buffers for this format.
+    private func systemPortraitBokehActive(config: StreamConfiguration) -> Bool {
+        guard config.portraitModeEnabled, let device = capture.currentDevice else { return false }
+        guard device.activeFormat.isPortraitEffectSupported else { return false }
+        return AVCaptureDevice.isPortraitEffectEnabled
+    }
+
+    /// Run Vision/Gaussian path only when portrait is requested but system Portrait isn’t supplying bokeh (avoids double blur).
+    private func syncSoftwarePortraitProcessorWithConfig(_ config: StreamConfiguration) {
+        let hardwareBokeh = systemPortraitBokehActive(config: config)
+        portraitProcessor.setEnabled(config.portraitModeEnabled && !hardwareBokeh, strength: config.portraitStrength)
     }
 
     public func setExposureCompensation(_ bias: Float) {
@@ -202,6 +231,7 @@ public final class StreamController: ObservableObject {
         abrController = nil
         pendingSnapshot = false
         useUsbLoopback = false
+        lastAppliedHardwarePortraitPath = nil
         portraitProcessor.setEnabled(false, strength: 0)
         lensController = nil
         exposureController = nil
@@ -247,7 +277,7 @@ public final class StreamController: ObservableObject {
         case .setFlash(let on):
             setTorch(on)
         case .setPortraitMode(let enabled, let strength):
-            setPortraitMode(enabled: enabled, strength: strength)
+            setPortraitMode(enabled: enabled, strength: strength, promptVideoEffects: false)
         case .setFocusMode(let mode):
             focusController?.apply(mode: mode)
         case .setCodec(let h265):
@@ -303,7 +333,7 @@ public final class StreamController: ObservableObject {
             encoder.requestKeyframe()
             attachCameraControllers()
             applyTorchFromConfiguration(config)
-            portraitProcessor.setEnabled(config.portraitModeEnabled, strength: config.portraitStrength)
+            syncSoftwarePortraitProcessorWithConfig(config)
             Task { @MainActor in
                 self.portraitModeEnabled = config.portraitModeEnabled
                 self.portraitStrength = config.portraitStrength
@@ -472,7 +502,25 @@ public final class StreamController: ObservableObject {
 
 extension StreamController: CaptureSessionDelegate {
     public func captureSession(_ session: CaptureSessionManager, didOutput pixelBuffer: CVPixelBuffer, presentationTime: CMTime) {
-        let frame = portraitProcessor.process(pixelBuffer)
+        let cfg = currentConfigurationSnapshot
+        if cfg.portraitModeEnabled {
+            let usesHardware = systemPortraitBokehActive(config: cfg)
+            if usesHardware != lastAppliedHardwarePortraitPath {
+                lastAppliedHardwarePortraitPath = usesHardware
+                syncSoftwarePortraitProcessorWithConfig(cfg)
+            }
+        } else if lastAppliedHardwarePortraitPath != nil {
+            lastAppliedHardwarePortraitPath = nil
+        }
+
+        let frame: CVPixelBuffer
+        if systemPortraitBokehActive(config: cfg) {
+            frame = pixelBuffer
+        } else if cfg.portraitModeEnabled {
+            frame = portraitProcessor.process(pixelBuffer)
+        } else {
+            frame = pixelBuffer
+        }
         if pendingSnapshot {
             pendingSnapshot = false
             if let payload = SnapshotResponse.makePayload(from: frame) {

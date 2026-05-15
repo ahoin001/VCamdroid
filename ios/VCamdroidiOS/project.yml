@@ -37,6 +37,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIBackgroundModes:
           - audio
+        NSCameraPortraitEffectEnabled: true
         NSCameraUsageDescription: VCamdroid uses the camera to stream video to your PC.
         NSMicrophoneUsageDescription: VCamdroid optionally streams microphone audio alongside video.
         NSLocalNetworkUsageDescription: VCamdroid advertises itself on the local network so the desktop client can discover it.
