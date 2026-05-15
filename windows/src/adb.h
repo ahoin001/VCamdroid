@@ -10,7 +10,7 @@ namespace adb
 	/*
 	* Get the local directory of the program
 	*/
-	std::string dir()
+	inline std::string dir()
 	{
 		char buffer[MAX_PATH];
 		GetModuleFileNameA(NULL, buffer, MAX_PATH);
@@ -24,7 +24,7 @@ namespace adb
 	* Reverse the given tcp port.
 	* adb reverse tcp:<port> tcp:<port>
 	*/
-	bool reverse(int port)
+	inline bool reverse(int port)
 	{
 		std::string path = dir();
 		std::string command = path + "\\adb\\adb.exe " + "reverse tcp:" + std::to_string(port) + " tcp:" + std::to_string(port);
@@ -45,7 +45,7 @@ namespace adb
 	* Forwards a given tcp port
 	* adb forward tcp:<port> tcp:<port>
 	*/
-	bool forward(int port)
+	inline bool forward(int port)
 	{
 		std::string path = dir();
 		std::string command = path + "\\adb\\adb.exe " + "forward tcp:" + std::to_string(port) + " tcp:" + std::to_string(port);
@@ -66,7 +66,7 @@ namespace adb
 	* Removes the reversed given tcp port.
 	* adb reverse --remove tcp:<port>
 	*/
-	bool kill(int port)
+	inline bool kill(int port)
 	{
 		std::string path = dir();
 
