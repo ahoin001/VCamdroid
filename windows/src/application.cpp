@@ -3,8 +3,12 @@
 #include "gui/imgadjdlg.h"
 #include "gui/streamconfigdlg.h"
 #include "gui/ioscontrolspanel.h"
+#include "gui/cameradockpanel.h"
 #include "gui/devicesview.h"
 #include "gui/qrconview.h"
+#include "adb.h"
+
+#include <wx/timer.h>
 #include "settings.h"
 #include "video/guipreviewscaler.h"
 #include <iomanip>
@@ -20,10 +24,58 @@ Application::Application()
 	stateRegistry = Settings::GetDeviceStates();
 }
 
+void Application::RecoverStaleState()
+{
+	adb::kill(6969);
+	adb::kill(8554);
+	usbmuxBridge.KillAll();
+}
+
+void Application::SetupUsbTunnels()
+{
+	if (!usbmuxBridge.HasConnectedDevice())
+		return;
+
+	logger << "[app] iOS device detected via USB, setting up tunnels.\n";
+	usbmuxBridge.Reverse(6969);
+	usbmuxBridge.Forward(8554);
+	usbDeviceConnected = true;
+	UpdateUsbStatusLabel();
+}
+
+void Application::PollUsbDevices()
+{
+	const bool connected = usbmuxBridge.HasConnectedDevice();
+	if (connected && !usbDeviceConnected)
+		SetupUsbTunnels();
+	else if (!connected && usbDeviceConnected)
+	{
+		usbmuxBridge.Kill(6969);
+		usbmuxBridge.Kill(8554);
+		usbDeviceConnected = false;
+		UpdateUsbStatusLabel();
+	}
+}
+
+void Application::UpdateUsbStatusLabel() const
+{
+	if (!mainWindow || !mainWindow->GetUsbStatusText())
+		return;
+
+	if (usbDeviceConnected)
+		mainWindow->GetUsbStatusText()->SetLabel("iPhone connected (USB)");
+	else if (usbmuxBridge.HasConnectedDevice())
+		mainWindow->GetUsbStatusText()->SetLabel("iPhone detected (USB) — setting up tunnel…");
+	else
+		mainWindow->GetUsbStatusText()->SetLabel("USB: waiting for iPhone (install Apple Devices / iTunes if needed)");
+}
+
 bool Application::OnInit()
 {
 	if (!wxApp::OnInit())
 		return false;
+
+	RecoverStaleState();
 
 	switch (Settings::Get("DIRECTSHOW_RESOLUTION") + Window::MenuIDs::DS_SD)
 	{
@@ -50,15 +102,14 @@ bool Application::OnInit()
 		return false;
 	}
 
-	// If an iOS device is connected via USB, set up port forwarding through usbmuxd.
-	if (usbmuxBridge.HasConnectedDevice())
-	{
-		logger << "[app] iOS device detected via USB, setting up USB tunnel.\n";
-		usbmuxBridge.Forward(6969);
-		usbmuxBridge.Forward(8554);
-	}
+	SetupUsbTunnels();
 
 	mainWindow = new Window(server->GetHostInfo());
+
+	usbPollTimer = new wxTimer();
+	usbPollTimer->Bind(wxEVT_TIMER, [this](wxTimerEvent&) { PollUsbDevices(); });
+	usbPollTimer->Start(2000);
+	UpdateUsbStatusLabel();
 
 	rtspManager = std::make_unique<RTSP::Manager>(
 		*server,
@@ -126,13 +177,13 @@ bool Application::OnInit()
 	return true;
 }
 
-StreamOptions& Application::GetCurrentDeviceStreamOptions()
+StreamOptions* Application::TryGetCurrentDeviceStreamOptions()
 {
-	auto deviceId = rtspManager->GetStreamingDevice();
-	// Safety check: if no device is streaming, return a dummy or handle error
-	// For now assuming caller checks availability, but using .at() checks bounds
-	const auto& desc = rtspManager->GetDescriptors().at(deviceId);
-	return stateRegistry[desc.name()];
+	if (!rtspManager || !rtspManager->HasValidStreamingDevice())
+		return nullptr;
+
+	const auto& desc = rtspManager->GetDescriptors()[rtspManager->GetStreamingDevice()];
+	return &stateRegistry[desc.name()];
 }
 
 void Application::BindEventListeners()
@@ -162,51 +213,54 @@ void Application::BindEventListeners()
 
 	// Check if devices exist before accessing options to prevent crashes
 	mainWindow->GetTorchButton()->Bind(wxEVT_BUTTON, [&](const wxEvent& arg) {
-		if (rtspManager->GetStreamingDevice() < 0) return;
-		auto& options = GetCurrentDeviceStreamOptions();
-		auto flash = options.flashEnabled = !options.flashEnabled;
-		rtspManager->SetFlash(flash);
+		auto* options = TryGetCurrentDeviceStreamOptions();
+		if (!options) return;
+		options->flashEnabled = !options->flashEnabled;
+		rtspManager->SetFlash(options->flashEnabled);
 	});
 
 	mainWindow->GetSwapButton()->Bind(wxEVT_BUTTON, [&](const wxEvent& arg) {
-		if (rtspManager->GetStreamingDevice() < 0) return;
-		auto& options = GetCurrentDeviceStreamOptions();
-		options.backCameraActive = !options.backCameraActive;
+		auto* options = TryGetCurrentDeviceStreamOptions();
+		if (!options) return;
+		auto& optionsRef = *options;
+		optionsRef.backCameraActive = !optionsRef.backCameraActive;
 		rtspManager->SwapCamera();
 	});
 
 	mainWindow->GetZoomInButton()->Bind(wxEVT_BUTTON, [&](const wxEvent& arg) {
-		if (rtspManager->GetStreamingDevice() < 0) return;
-		auto& options = GetCurrentDeviceStreamOptions();
+		auto* options = TryGetCurrentDeviceStreamOptions();
+		if (!options) return;
+		auto& optionsRef = *options;
 		const auto& desc = rtspManager->GetDescriptors()[rtspManager->GetStreamingDevice()];
 
 		if (desc.isiOS()) {
 			// On iOS the lens slider is continuous and capped by the actual
 			// device's optical range; clamp generously and let the iPhone
 			// re-clamp to its true maximum.
-			options.iosLensZoom = std::min(10.0f, options.iosLensZoom + 0.5f);
-			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.iosLensZoom));
-			rtspManager->SetLensZoom(options.iosLensZoom);
+			optionsRef.iosLensZoom = std::min(10.0f, optionsRef.iosLensZoom + 0.5f);
+			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", optionsRef.iosLensZoom));
+			rtspManager->SetLensZoom(optionsRef.iosLensZoom);
 		} else {
-			options.zoom = std::min(10.0f, options.zoom + 0.5f);
-			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.zoom));
-			rtspManager->Zoom(options.zoom);
+			optionsRef.zoom = std::min(10.0f, optionsRef.zoom + 0.5f);
+			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", optionsRef.zoom));
+			rtspManager->Zoom(optionsRef.zoom);
 		}
 	});
 
 	mainWindow->GetZoomOutButton()->Bind(wxEVT_BUTTON, [&](const wxEvent& arg) {
-		if (rtspManager->GetStreamingDevice() < 0) return;
-		auto& options = GetCurrentDeviceStreamOptions();
+		auto* options = TryGetCurrentDeviceStreamOptions();
+		if (!options) return;
+		auto& optionsRef = *options;
 		const auto& desc = rtspManager->GetDescriptors()[rtspManager->GetStreamingDevice()];
 
 		if (desc.isiOS()) {
-			options.iosLensZoom = std::max(0.5f, options.iosLensZoom - 0.5f);
-			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.iosLensZoom));
-			rtspManager->SetLensZoom(options.iosLensZoom);
+			optionsRef.iosLensZoom = std::max(0.5f, optionsRef.iosLensZoom - 0.5f);
+			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", optionsRef.iosLensZoom));
+			rtspManager->SetLensZoom(optionsRef.iosLensZoom);
 		} else {
-			options.zoom = std::max(1.0f, options.zoom - 0.5f);
-			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", options.zoom));
-			rtspManager->Zoom(options.zoom);
+			optionsRef.zoom = std::max(1.0f, optionsRef.zoom - 0.5f);
+			mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", optionsRef.zoom));
+			rtspManager->Zoom(optionsRef.zoom);
 		}
 	});
 
@@ -214,6 +268,54 @@ void Application::BindEventListeners()
 		if (rtspManager->GetStreamingDevice() < 0) return;
 		snapshotManager.RequestSnapshot();
 	});
+
+	if (auto* dock = mainWindow->GetCameraDockPanel())
+	{
+		if (auto* iosPanel = dock->GetIosPanel())
+		{
+			iosPanel->Bind(EVT_IOS_PORTRAIT_MODE_CHANGED, [this](wxCommandEvent& e)
+			{
+				auto* panel = static_cast<IosControlsPanel*>(e.GetEventObject());
+				auto* options = TryGetCurrentDeviceStreamOptions();
+				if (!options || !rtspManager->HasValidStreamingDevice()) return;
+				options->iosPortraitModeEnabled = panel->IsPortraitModeEnabled();
+				options->iosPortraitStrength = panel->GetPortraitStrength();
+				rtspManager->SetPortraitMode(
+					options->iosPortraitModeEnabled,
+					static_cast<uint8_t>(options->iosPortraitStrength));
+			});
+
+			iosPanel->Bind(EVT_IOS_EXPOSURE_CHANGED, [this](wxCommandEvent& e)
+			{
+				auto* panel = static_cast<IosControlsPanel*>(e.GetEventObject());
+				auto* options = TryGetCurrentDeviceStreamOptions();
+				if (!options) return;
+				options->iosExposureMode = panel->IsManualExposure()
+					? StreamOptions::ExposureMode::Manual
+					: StreamOptions::ExposureMode::Auto;
+				options->iosExposureDurationSeconds = panel->GetExposureDurationSeconds();
+				options->iosExposureISO = panel->GetExposureISO();
+				options->iosExposureCompensation = panel->GetExposureCompensation();
+				if (options->iosExposureMode == StreamOptions::ExposureMode::Manual)
+					rtspManager->SetExposure(options->iosExposureDurationSeconds, options->iosExposureISO);
+				rtspManager->SetExposureCompensation(options->iosExposureCompensation);
+			});
+
+			iosPanel->Bind(EVT_IOS_WHITE_BALANCE_CHANGED, [this](wxCommandEvent& e)
+			{
+				auto* panel = static_cast<IosControlsPanel*>(e.GetEventObject());
+				auto* options = TryGetCurrentDeviceStreamOptions();
+				if (!options) return;
+				options->iosWhiteBalanceMode = panel->IsManualWhiteBalance()
+					? StreamOptions::WhiteBalanceMode::Manual
+					: StreamOptions::WhiteBalanceMode::Auto;
+				options->iosWhiteBalanceTemperatureK = panel->GetWhiteBalanceTemperatureK();
+				options->iosWhiteBalanceTint = panel->GetWhiteBalanceTint();
+				if (options->iosWhiteBalanceMode == StreamOptions::WhiteBalanceMode::Manual)
+					rtspManager->SetWhiteBalance(options->iosWhiteBalanceTemperatureK, options->iosWhiteBalanceTint);
+			});
+		}
+	}
 }
 
 void Application::OnDeviceConnected(DeviceDescriptor& descriptor) const
@@ -237,8 +339,13 @@ void Application::OnDeviceDisconnected(DeviceDescriptor& descriptor) const
 			mainWindow->GetCanvas()->Clear();
 	}
 
-	// Remove from manager
+	// Remove from manager (clears streamingDevice when active device disconnects)
 	rtspManager->RemoveDescriptor(descriptor);
+
+	if (mainWindow->GetCameraDockPanel())
+		mainWindow->GetCameraDockPanel()->SetVisibleForPlatform(false, false);
+
+	mainWindow->GetTorchButton()->Enable(false);
 
 	// Update UI list
 	UpdateAvailableDevices();
@@ -360,6 +467,21 @@ void Application::OnMenuEvent(wxCommandEvent& event)
 			Settings::Set("DIRECTSHOW_RESOLUTION", event.GetId() - Window::MenuIDs::DS_SD);
 			break;
 		}
+
+		case Window::MenuIDs::HELP_OBS:
+		{
+			wxMessageBox(
+				"OBS / Zoom / Teams setup:\n\n"
+				"1. Run install.bat once to register the Softcam virtual camera.\n"
+				"2. In OBS: Sources → Video Capture Device → \"VCamdroid Camera\" (or Softcam).\n"
+				"3. Connect your iPhone in the VCamdroid iOS app (Auto, USB, or Manual).\n"
+				"4. Select your phone in the Source dropdown on this window.\n\n"
+				"No OBS plugin is required for V1.",
+				"Using VCamdroid in OBS",
+				wxOK | wxICON_INFORMATION,
+				mainWindow);
+			break;
+		}
 	}
 }
 
@@ -446,6 +568,11 @@ void Application::OnSourceChanged(wxEvent& event)
 
 	rtspManager->Connect2Stream(deviceId, state);
 
+	if (mainWindow->GetCameraDockPanel())
+		mainWindow->GetCameraDockPanel()->SetVisibleForPlatform(descriptor.isiOS(), true);
+
+	mainWindow->GetTorchButton()->Enable(true);
+
 	// Update UI Zoom Label to match state. iOS devices track lens zoom
 	// across the entire optical range, Android tracks digital zoom.
 	const float displayedZoom = descriptor.isiOS() ? state.iosLensZoom : state.zoom;
@@ -463,22 +590,29 @@ void Application::OnSourceChanged(wxEvent& event)
 		rtspManager->SetStabilizationMode(state.iosStabilizationMode);
 		if (state.iosFocusLockPosition >= 0.0f)
 			rtspManager->SetFocusLock(state.iosFocusLockPosition);
+		rtspManager->SetPortraitMode(state.iosPortraitModeEnabled, static_cast<uint8_t>(state.iosPortraitStrength));
 	}
 }
 
 void Application::OnWindowCloseEvent(wxCloseEvent& event)
 {
-	// Hide window for responsive UI close feeling
 	mainWindow->Hide();
 
-	if (mdnsBrowser) mdnsBrowser->Stop();
+	if (usbPollTimer)
+		usbPollTimer->Stop();
 
-	rtspManager.reset();
-	server->Close();
+	if (mdnsBrowser)
+		mdnsBrowser->Stop();
 
-	// Tear down USB tunnels.
-	usbmuxBridge.Kill(6969);
-	usbmuxBridge.Kill(8554);
+	if (rtspManager)
+		rtspManager->StopAll();
+
+	if (server)
+		server->Close();
+
+	usbmuxBridge.KillAll();
+	adb::kill(6969);
+	adb::kill(8554);
 
 	Settings::UpdateDeviceStates(stateRegistry);
 	Settings::Save();

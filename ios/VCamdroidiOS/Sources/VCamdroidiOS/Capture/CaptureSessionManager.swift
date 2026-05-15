@@ -100,6 +100,10 @@ public final class CaptureSessionManager: NSObject {
         }
     }
 
+    public func sessionQueueAsync(_ block: @escaping () -> Void) {
+        sessionQueue.async(execute: block)
+    }
+
     /// Performs a lock-protected mutation of the current device. Used by the
     /// camera controllers; centralizing keeps lock semantics consistent.
     public func mutateDevice(_ mutation: (AVCaptureDevice) throws -> Void) throws {

@@ -63,4 +63,9 @@ struct StreamOptions
 
 	/// 0..1 lens position when locked. Negative means "release to auto".
 	float iosFocusLockPosition = -1.0f;
+
+	/// Portrait Mode (bokeh): subject sharp, background blurred.
+	bool iosPortraitModeEnabled = false;
+	/// 0..100 blur strength.
+	int iosPortraitStrength = 50;
 };

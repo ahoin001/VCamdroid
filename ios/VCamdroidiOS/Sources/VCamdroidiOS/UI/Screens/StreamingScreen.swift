@@ -25,6 +25,10 @@ public struct StreamingScreen: View {
             VStack {
                 statusOverlay
                 Spacer()
+                if !controller.studioModeEnabled {
+                    CameraControlBar(controller: controller)
+                        .padding(.horizontal, Theme.Spacing.xs)
+                }
                 bottomBar
             }
             .padding(Theme.Spacing.md)

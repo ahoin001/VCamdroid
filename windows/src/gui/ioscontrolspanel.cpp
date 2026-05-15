@@ -9,6 +9,7 @@ wxDEFINE_EVENT(EVT_IOS_STABILIZATION_MODE_CHANGED, wxCommandEvent);
 wxDEFINE_EVENT(EVT_IOS_FOCUS_LOCK_CHANGED, wxCommandEvent);
 wxDEFINE_EVENT(EVT_IOS_RESET_AUTO, wxCommandEvent);
 wxDEFINE_EVENT(EVT_IOS_STUDIO_MODE_CHANGED, wxCommandEvent);
+wxDEFINE_EVENT(EVT_IOS_PORTRAIT_MODE_CHANGED, wxCommandEvent);
 
 namespace
 {
@@ -74,6 +75,8 @@ IosControlsPanel::IosControlsPanel(wxWindow* parent, const StreamOptions& initia
 
     auto* inner = new wxBoxSizer(wxVERTICAL);
 
+    BuildPortraitSection(inner);
+    inner->AddSpacer(8);
     BuildLensSection(inner);
     inner->AddSpacer(8);
     BuildExposureSection(inner);
@@ -92,6 +95,11 @@ IosControlsPanel::IosControlsPanel(wxWindow* parent, const StreamOptions& initia
     SetSizerAndFit(root);
 
     // Seed initial state.
+    portraitCheck->SetValue(initial.iosPortraitModeEnabled);
+    portraitStrengthSlider->SetValue(initial.iosPortraitStrength);
+    portraitStrengthLabel->SetLabel(wxString::Format("%d%%", initial.iosPortraitStrength));
+    portraitStrengthSlider->Enable(initial.iosPortraitModeEnabled);
+
     lensSlider->SetValue(static_cast<int>(std::round(initial.iosLensZoom * kLensSliderScale)));
     lensLabel->SetLabel(wxString::Format("%.1fx", initial.iosLensZoom));
 
@@ -118,6 +126,35 @@ IosControlsPanel::IosControlsPanel(wxWindow* parent, const StreamOptions& initia
     RefreshExposureUI();
     RefreshWhiteBalanceUI();
     RefreshFocusUI();
+}
+
+void IosControlsPanel::BuildPortraitSection(wxBoxSizer* parent)
+{
+    auto* header = new wxBoxSizer(wxHORIZONTAL);
+    portraitCheck = new wxCheckBox(this, wxID_ANY, "Portrait Mode (bokeh)");
+    portraitCheck->Bind(wxEVT_CHECKBOX, &IosControlsPanel::OnPortraitChanged, this);
+    header->Add(portraitCheck, 0, wxALIGN_CENTER_VERTICAL);
+    parent->Add(header, 0, wxBOTTOM, 5);
+
+    auto* row = new wxBoxSizer(wxHORIZONTAL);
+    row->Add(new wxStaticText(this, wxID_ANY, "Strength"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+    portraitStrengthSlider = new wxSlider(this, wxID_ANY, 50, 0, 100);
+    portraitStrengthSlider->Bind(wxEVT_SLIDER, &IosControlsPanel::OnPortraitChanged, this);
+    row->Add(portraitStrengthSlider, 1, wxEXPAND | wxRIGHT, 5);
+    portraitStrengthLabel = new wxStaticText(this, wxID_ANY, "50%", wxDefaultPosition, wxSize(48, -1), wxALIGN_RIGHT);
+    row->Add(portraitStrengthLabel, 0, wxALIGN_CENTER_VERTICAL);
+    parent->Add(row, 0, wxEXPAND);
+}
+
+void IosControlsPanel::OnPortraitChanged(wxCommandEvent& event)
+{
+    (void)event;
+    const bool on = portraitCheck->GetValue();
+    portraitStrengthSlider->Enable(on);
+    portraitStrengthLabel->SetLabel(wxString::Format("%d%%", portraitStrengthSlider->GetValue()));
+    wxCommandEvent evt(EVT_IOS_PORTRAIT_MODE_CHANGED, GetId());
+    evt.SetEventObject(this);
+    ProcessWindowEvent(evt);
 }
 
 void IosControlsPanel::BuildLensSection(wxBoxSizer* parent)
@@ -402,4 +439,14 @@ float IosControlsPanel::GetFocusLockPosition() const
 bool IosControlsPanel::IsStudioModeEnabled() const
 {
     return studioModeCheck && studioModeCheck->GetValue();
+}
+
+bool IosControlsPanel::IsPortraitModeEnabled() const
+{
+    return portraitCheck && portraitCheck->GetValue();
+}
+
+int IosControlsPanel::GetPortraitStrength() const
+{
+    return portraitStrengthSlider ? portraitStrengthSlider->GetValue() : 50;
 }

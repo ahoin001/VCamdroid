@@ -54,6 +54,7 @@ namespace RTSP
 			static const int MIC_ENABLED           = 0x28;
 			static const int SNAPSHOT_REQUEST      = 0x29;
 			static const int RESET_CAMERA_TO_AUTO  = 0x2A;
+			static const int PORTRAIT_MODE         = 0x2B;
 		};
 
 		using OnFrameReceivedCallback = Streaming::IFrameReceiver::OnFrameReceivedCallback;
@@ -68,9 +69,12 @@ namespace RTSP
 		void RemoveDescriptor(DeviceDescriptor& descriptor);
 
 		void Connect2Stream(int descriptorId, const StreamOptions& options);
+		void StopAll();
+		void ClearStreamingDevice();
 
 		const std::vector<DeviceDescriptor>& GetDescriptors() const;
 		const int& GetStreamingDevice() const;
+		bool HasValidStreamingDevice() const;
 
 		// v1 controls (Android + iOS where applicable)
 		void SetResolution(unsigned short width, unsigned short height);
@@ -103,8 +107,10 @@ namespace RTSP
 		void SetMicrophoneEnabled(bool enabled);
 		void RequestSnapshot();
 		void ResetCameraToAuto();
+		void SetPortraitMode(bool enabled, uint8_t strength);
 
 	private:
+		bool SendToActiveDevice(const unsigned char* bytes, size_t size) const;
 		const Server& server;
 
 		OnFrameReceivedCallback onFrameReceivedCallback;

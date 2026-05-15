@@ -12,6 +12,7 @@ wxDECLARE_EVENT(EVT_IOS_STABILIZATION_MODE_CHANGED, wxCommandEvent);
 wxDECLARE_EVENT(EVT_IOS_FOCUS_LOCK_CHANGED, wxCommandEvent);
 wxDECLARE_EVENT(EVT_IOS_RESET_AUTO, wxCommandEvent);
 wxDECLARE_EVENT(EVT_IOS_STUDIO_MODE_CHANGED, wxCommandEvent);
+wxDECLARE_EVENT(EVT_IOS_PORTRAIT_MODE_CHANGED, wxCommandEvent);
 
 /*
     Premium iOS camera control panel. Renders the continuous lens zoom slider,
@@ -45,7 +46,11 @@ public:
 
     bool IsStudioModeEnabled() const;
 
+    bool IsPortraitModeEnabled() const;
+    int GetPortraitStrength() const;
+
 private:
+    void BuildPortraitSection(wxBoxSizer* parent);
     void BuildLensSection(wxBoxSizer* parent);
     void BuildExposureSection(wxBoxSizer* parent);
     void BuildWhiteBalanceSection(wxBoxSizer* parent);
@@ -63,6 +68,12 @@ private:
     void OnFocusChanged(wxCommandEvent& event);
     void OnStabilizationChanged(wxCommandEvent& event);
     void OnReset(wxCommandEvent& event);
+    void OnPortraitChanged(wxCommandEvent& event);
+
+    // Portrait (bokeh)
+    wxCheckBox* portraitCheck = nullptr;
+    wxSlider* portraitStrengthSlider = nullptr;
+    wxStaticText* portraitStrengthLabel = nullptr;
 
     // Lens
     wxSlider* lensSlider = nullptr;

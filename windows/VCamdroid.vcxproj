@@ -165,6 +165,7 @@ xcopy "$(ProjectDir)3rdparty\softcam\examples\softcam_installer\x64\Release\soft
     <ClCompile Include="src\gui\qrconview.cpp" />
     <ClCompile Include="src\discovery\mdnsdiscovery.cpp" />
     <ClCompile Include="src\gui\ioscontrolspanel.cpp" />
+    <ClCompile Include="src\gui\cameradockpanel.cpp" />
     <ClCompile Include="src\gui\streamconfigdlg.cpp" />
     <ClCompile Include="src\net\connection.cpp" />
     <ClCompile Include="src\net\serializer.cpp" />
@@ -218,6 +219,7 @@ xcopy "$(ProjectDir)3rdparty\softcam\examples\softcam_installer\x64\Release\soft
     <ClInclude Include="src\gui\qrconview.h" />
     <ClInclude Include="src\discovery\mdnsdiscovery.h" />
     <ClInclude Include="src\gui\ioscontrolspanel.h" />
+    <ClInclude Include="src\gui\cameradockpanel.h" />
     <ClInclude Include="src\gui\streamconfigdlg.h" />
     <ClInclude Include="src\gui\window.h" />
     <ClInclude Include="src\logger.h" />

@@ -34,6 +34,7 @@ public enum PacketType: UInt8 {
     case micEnabled            = 0x28
     case snapshotRequest       = 0x29
     case resetCameraToAuto     = 0x2A
+    case portraitMode          = 0x2B
 }
 
 public enum FlipAxis: UInt8 {

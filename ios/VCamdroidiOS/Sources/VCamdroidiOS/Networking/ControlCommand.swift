@@ -32,6 +32,7 @@ public enum ControlCommand: Equatable, Sendable {
     case setMicrophone(enabled: Bool)
     case snapshotRequest
     case resetCameraToAuto
+    case setPortraitMode(enabled: Bool, strength: Int)
 
     /// Forward-compatibility fallback for opcodes a build does not yet
     /// understand. We retain the raw bytes so they can be logged for

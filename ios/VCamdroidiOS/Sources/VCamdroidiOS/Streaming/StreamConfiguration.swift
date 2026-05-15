@@ -20,6 +20,9 @@ public struct StreamConfiguration: Equatable, Sendable {
     public var flashEnabled: Bool
     public var h265Enabled: Bool
 
+    public var portraitModeEnabled: Bool
+    public var portraitStrength: Int
+
     public var filterValues: [String: Int]
     public var activeEffectFilter: String?
 
@@ -35,6 +38,8 @@ public struct StreamConfiguration: Equatable, Sendable {
         stabilizationEnabled: Bool = false,
         flashEnabled: Bool = false,
         h265Enabled: Bool = false,
+        portraitModeEnabled: Bool = false,
+        portraitStrength: Int = 50,
         filterValues: [String: Int] = [:],
         activeEffectFilter: String? = nil
     ) {
@@ -49,6 +54,8 @@ public struct StreamConfiguration: Equatable, Sendable {
         self.stabilizationEnabled = stabilizationEnabled
         self.flashEnabled = flashEnabled
         self.h265Enabled = h265Enabled
+        self.portraitModeEnabled = portraitModeEnabled
+        self.portraitStrength = portraitStrength
         self.filterValues = filterValues
         self.activeEffectFilter = activeEffectFilter
     }

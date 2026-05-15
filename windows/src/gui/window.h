@@ -7,6 +7,8 @@
 #include "canvas.h"
 #include "net/server.h"
 
+class CameraDockPanel;
+
 class Window : public wxFrame
 {
 public:
@@ -21,6 +23,7 @@ public:
 		static const int DS_HD = 106;
 		static const int DS_FHD = 107;
 		static const int DS_QHD = 108;
+		static const int HELP_OBS = 109;
 	};
 
 	Window(Server::HostInfo hostInfo);
@@ -47,6 +50,8 @@ public:
 	wxButton* GetSnapshotButton();
 
 	wxStaticText* GetStatsText();
+	wxStaticText* GetUsbStatusText();
+	CameraDockPanel* GetCameraDockPanel();
 	wxTaskBarIcon* GetTaskbarIcon();
 
 private:
@@ -73,6 +78,8 @@ private:
 	wxButton* snapshotButton;
 
 	wxStaticText* statsText;
+	wxStaticText* usbStatusText = nullptr;
+	CameraDockPanel* cameraDockPanel = nullptr;
 
 	void InitializeMenu(Server::HostInfo hostinfo);
 	void InitializeTopBar(wxPanel* parent, wxBoxSizer* topsizer);

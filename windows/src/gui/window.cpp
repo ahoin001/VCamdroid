@@ -1,4 +1,5 @@
 #include "gui/window.h"
+#include "gui/cameradockpanel.h"
 #include "settings.h"
 #include "icon.xpm"
 
@@ -7,7 +8,7 @@
 #include <wx/statline.h>
 
 Window::Window(Server::HostInfo hostinfo)
-	: wxFrame(nullptr, wxID_ANY, "VCamdroid", wxDefaultPosition, wxSize(500, 480), wxDEFAULT_FRAME_STYLE & ~wxMAXIMIZE_BOX & ~wxRESIZE_BORDER)
+	: wxFrame(nullptr, wxID_ANY, "VCamdroid", wxDefaultPosition, wxSize(720, 640))
 {
 	wxPanel* panel = nullptr;
 	try {
@@ -34,7 +35,16 @@ Window::Window(Server::HostInfo hostinfo)
 	InitializeMenu(hostinfo);
 
 	InitializeTopBar(panel, topsizer);
+
+	usbStatusText = new wxStaticText(panel, wxID_ANY, "USB: checking…");
+	usbStatusText->SetForegroundColour(wxColour(100, 110, 130));
+	topsizer->Add(usbStatusText, 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+
 	InitializeCanvasPanel(panel, topsizer);
+
+	cameraDockPanel = new CameraDockPanel(panel);
+	topsizer->Add(cameraDockPanel, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10);
+
 	InitializeBottomBar(panel, topsizer);
 
 	panel->SetSizer(topsizer);
@@ -74,6 +84,7 @@ void Window::InitializeMenu(Server::HostInfo hostinfo)
 
 	file->AppendSubMenu(dsresolutions, "DirectShow Resolution", "Requires restart");
 
+	file->Append(MenuIDs::HELP_OBS, "OBS / Zoom setup…");
 	file->Append(wxID_ANY, "About");
 	file->AppendSeparator();
 	file->Append(wxID_ANY, "Exit");
@@ -259,4 +270,6 @@ wxButton* Window::GetAdjustmentsButton() { return adjustmentsButton; }
 wxButton* Window::GetSnapshotButton() { return snapshotButton; }
 
 wxStaticText* Window::GetStatsText() { return statsText; }
+wxStaticText* Window::GetUsbStatusText() { return usbStatusText; }
+CameraDockPanel* Window::GetCameraDockPanel() { return cameraDockPanel; }
 wxTaskBarIcon* Window::GetTaskbarIcon() { return taskbarIcon; }

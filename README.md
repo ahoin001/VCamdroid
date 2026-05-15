@@ -193,11 +193,16 @@ VCamdroid works as a standard webcam in OBS Studio with no extra plugins require
 * Set the resolution in OBS to match the resolution configured in the VCamdroid Desktop Client for the best quality.
 * For the lowest latency, use a USB connection (Android) or ensure your Wi-Fi network is uncongested.
 * VCamdroid also works in Zoom, Discord, Teams, Google Meet, and any other app that accepts standard webcam input — just select **Softcam** as the camera.
+* Use **File → OBS / Zoom setup…** in the desktop app for a quick checklist.
 
+**If the feed stops or the app feels stuck:** fully quit VCamdroid on Windows and on your iPhone, then reopen the PC app first, then the phone app. The desktop client clears USB tunnels and port `6969` on startup.
 
 ## iPhone Premium Camera Controls
 
-When an iPhone is connected, the VCamdroid Desktop Client shows an additional **iOS Controls** panel in the stream configuration dialog. All controls are applied in real-time to the camera on your iPhone:
+When an iPhone is connected, the desktop app shows a **Camera controls** dock (and the stream settings dialog) with Portrait Mode (bokeh), exposure, and white balance. The iOS streaming screen exposes the same primary controls. All are applied in real time on your iPhone:
+
+### Portrait Mode (bokeh)
+* Blurs the background while keeping you sharp (Camo-style), with an adjustable strength slider on phone and PC.
 
 ### Lens Zoom
 * Smoothly zoom across the **entire optical range** of your iPhone's camera system.

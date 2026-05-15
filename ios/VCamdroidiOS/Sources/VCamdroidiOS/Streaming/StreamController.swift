@@ -57,7 +57,9 @@ public final class StreamController: ObservableObject {
     private let controlChannel: ControlChannel
     private let metrics: StreamMetrics
     private let bonjour: BonjourPublisher
+    private let portraitProcessor = PortraitEffectProcessor()
     private var abrController: AdaptiveBitrateController?
+    private var useUsbLoopback = false
 
     /// Optional audio capture pipeline. Lazily created when Windows toggles
     /// `MIC_ENABLED` so apps that never enable the mic pay nothing.
@@ -70,6 +72,9 @@ public final class StreamController: ObservableObject {
     @Published public private(set) var studioModeEnabled: Bool = false
     @Published public private(set) var microphoneEnabled: Bool = false
     @Published public private(set) var currentBitrateKbps: Int = 0
+    @Published public private(set) var hasTorch: Bool = false
+    @Published public private(set) var portraitModeEnabled: Bool = false
+    @Published public private(set) var portraitStrength: Int = 50
 
     // Camera controllers — populated in Phase 2.
     public private(set) var lensController: LensController?
@@ -107,9 +112,45 @@ public final class StreamController: ObservableObject {
         }
         // Initial snapshot.
         setConfiguration(configuration)
+        disconnect()
     }
 
     // MARK: - Public API
+
+    /// Auto mode: advertise on Bonjour and prefer USB loopback when available.
+    public func startAutoDiscovery() {
+        bonjour.start(deviceName: UIDevice.current.name)
+    }
+
+    public func stopAutoDiscovery() {
+        bonjour.stop()
+    }
+
+    public func connectUsb() async {
+        useUsbLoopback = true
+        await connect(host: "127.0.0.1", controlPort: 6969, videoPort: 8554)
+    }
+
+    public func setPortraitMode(enabled: Bool, strength: Int) {
+        let clamped = min(100, max(0, strength))
+        portraitProcessor.setEnabled(enabled, strength: clamped)
+        Task { @MainActor in
+            self.portraitModeEnabled = enabled
+            self.portraitStrength = clamped
+        }
+        reconfigureNoRestart {
+            $0.portraitModeEnabled = enabled
+            $0.portraitStrength = clamped
+        }
+    }
+
+    public func setExposureCompensation(_ bias: Float) {
+        exposureController?.apply(compensation: bias)
+    }
+
+    public func setWhiteBalance(temperatureK: Float, tint: Float) {
+        whiteBalanceController?.apply(temperatureK: temperatureK, tint: tint)
+    }
 
     /// Brings up capture preview and the video listener, then dials the
     /// Windows control endpoint. Once Windows ACTIVATEs us, encoded frames
@@ -139,7 +180,9 @@ public final class StreamController: ObservableObject {
 
         let descriptor = await buildDescriptor(videoPort: videoPort)
         controlChannel.connect(host: host, port: controlPort, descriptor: descriptor)
-        bonjour.start(deviceName: descriptor.name)
+        if !bonjour.isPublishing {
+            bonjour.start(deviceName: descriptor.name)
+        }
         metrics.start()
 
         await MainActor.run {
@@ -158,6 +201,8 @@ public final class StreamController: ObservableObject {
         audioCapture = nil
         abrController = nil
         pendingSnapshot = false
+        useUsbLoopback = false
+        portraitProcessor.setEnabled(false, strength: 0)
         lensController = nil
         exposureController = nil
         whiteBalanceController = nil
@@ -200,9 +245,9 @@ public final class StreamController: ObservableObject {
         case .setStabilization(let on):
             reconfigure { $0.stabilizationEnabled = on }
         case .setFlash(let on):
-            try? capture.mutateDevice { device in
-                if device.hasTorch { try? device.setTorchModeOn(level: on ? 1.0 : 0.0) }
-            }
+            setTorch(on)
+        case .setPortraitMode(let enabled, let strength):
+            setPortraitMode(enabled: enabled, strength: strength)
         case .setFocusMode(let mode):
             focusController?.apply(mode: mode)
         case .setCodec(let h265):
@@ -257,6 +302,12 @@ public final class StreamController: ObservableObject {
             try encoder.configure(makeEncoderConfig(from: config))
             encoder.requestKeyframe()
             attachCameraControllers()
+            applyTorchFromConfiguration(config)
+            portraitProcessor.setEnabled(config.portraitModeEnabled, strength: config.portraitStrength)
+            Task { @MainActor in
+                self.portraitModeEnabled = config.portraitModeEnabled
+                self.portraitStrength = config.portraitStrength
+            }
             configureABR()
         } catch {
             Log.error("stream", "Activation failed: \(error.localizedDescription)")
@@ -338,9 +389,30 @@ public final class StreamController: ObservableObject {
 
     // MARK: - Descriptor
 
+    private func setTorch(_ on: Bool) {
+        capture.sessionQueueAsync {
+            do {
+                try self.capture.mutateDevice { device in
+                    guard device.hasTorch else { return }
+                    if on {
+                        try device.setTorchModeOn(level: 1.0)
+                    } else {
+                        device.torchMode = .off
+                    }
+                }
+            } catch {
+                Log.error("torch", error.localizedDescription)
+            }
+        }
+    }
+
+    private func applyTorchFromConfiguration(_ config: StreamConfiguration) {
+        setTorch(config.flashEnabled)
+    }
+
     private func buildDescriptor(videoPort: UInt16) async -> DeviceDescriptor {
         let (back, front) = capture.enumerateSupportedResolutions()
-        let host = LocalHost.bestRoutableAddress()
+        let host = useUsbLoopback ? "127.0.0.1" : LocalHost.bestRoutableAddress()
         let url = "vcmd://\(host):\(videoPort)/v1?codec=h264"
         let name = await UIDevice.bestDisplayName
         return DeviceDescriptor(
@@ -356,6 +428,7 @@ public final class StreamController: ObservableObject {
 
     private func attachCameraControllers() {
         guard let device = capture.currentDevice else { return }
+        Task { @MainActor in self.hasTorch = device.hasTorch && device.position == .back }
         lensController = LensController(device: device, capture: capture)
         exposureController = ExposureController(device: device, capture: capture)
         whiteBalanceController = WhiteBalanceController(device: device, capture: capture)
@@ -399,14 +472,15 @@ public final class StreamController: ObservableObject {
 
 extension StreamController: CaptureSessionDelegate {
     public func captureSession(_ session: CaptureSessionManager, didOutput pixelBuffer: CVPixelBuffer, presentationTime: CMTime) {
+        let frame = portraitProcessor.process(pixelBuffer)
         if pendingSnapshot {
             pendingSnapshot = false
-            if let payload = SnapshotResponse.makePayload(from: pixelBuffer) {
+            if let payload = SnapshotResponse.makePayload(from: frame) {
                 controlChannel.send(payload)
             }
         }
         guard videoServer.hasSubscriber else { return }
-        encoder.encode(pixelBuffer: pixelBuffer, presentationTime: presentationTime, forceKeyframe: false)
+        encoder.encode(pixelBuffer: frame, presentationTime: presentationTime, forceKeyframe: false)
     }
 
     public func captureSession(_ session: CaptureSessionManager, didFailWith error: Error) {

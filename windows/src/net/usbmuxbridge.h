@@ -3,6 +3,7 @@
 #include "net/devicebridge.h"
 
 #include <map>
+#include <set>
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -46,11 +47,17 @@ private:
 
     std::mutex relayMutex;
     std::map<int, std::unique_ptr<Relay>> relays;
+    std::set<int> activeReversePorts;
 
     uint32_t cachedDeviceHandle = 0;
+    char cachedUdid[44]{};
     bool deviceEnumerated = false;
 
     bool EnsureDevice();
     void RelayWorker(int port, Relay* relay);
+    bool EstablishLockdownReverse(int port);
 #endif
+
+public:
+    void KillAll();
 };

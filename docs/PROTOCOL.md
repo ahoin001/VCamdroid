@@ -25,10 +25,12 @@ USB tunneling per platform:
 - **Android:** `adb reverse tcp:6969 tcp:6969` + `adb forward tcp:8554 tcp:8554`
   (the Android app advertises an RTSP URL containing `127.0.0.1` so the Windows
   side forces RTSP-over-TCP transport).
-- **iOS:** `libusbmuxd` tunnel over the Apple Mobile Device Service
-  (`com.apple.mobile.lockdown`). The Windows side allocates two local TCP
-  endpoints that forward into the device's `localhost:6969` and
-  `localhost:8554` sockets.
+- **iOS:** `libusbmuxd` + `libimobiledevice` over Apple Mobile Device Service.
+  - **Control (6969):** reverse tunnel — the phone dials `127.0.0.1:6969` on
+    the device; usbmuxd routes to the Windows listener on `localhost:6969`.
+  - **Video (8554):** forward tunnel — Windows `RawTCPReceiver` connects to
+    `localhost:8554`, which usbmuxd forwards to the iPhone video server on
+  device port `8554`. The descriptor URL uses `vcmd://127.0.0.1:8554/...` for USB.
 
 ---
 
@@ -171,6 +173,7 @@ Every command begins with a 1-byte opcode.
 | 0x28 | MIC_ENABLED                | `uint8 enabled (0/1)`                                                |
 | 0x29 | SNAPSHOT_REQUEST           | (no payload)                                                         |
 | 0x2A | RESET_CAMERA_TO_AUTO       | (no payload — releases all manual locks)                             |
+| 0x2B | PORTRAIT_MODE              | `uint8 enabled`, `uint8 strength` (0–100 bokeh blur strength)        |
 
 Android implementations should **ignore** unknown opcodes rather than crash;
 iOS implementations should treat opcodes ≥ 0x20 they don't yet understand the

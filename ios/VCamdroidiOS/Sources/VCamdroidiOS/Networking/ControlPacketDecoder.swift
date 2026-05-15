@@ -148,6 +148,12 @@ public enum ControlPacketDecoder {
         case .resetCameraToAuto:
             return (.resetCameraToAuto, 1)
 
+        case .portraitMode:
+            var reader = ByteReader(body)
+            let enabled = try reader.readUInt8() != 0
+            let strength = Int(try reader.readUInt8())
+            return (.setPortraitMode(enabled: enabled, strength: strength), 1 + reader.offset)
+
         case .frame, .quality, .none:
             // 0x00 / 0x04 / unknown: surface as unknown so callers can log.
             return (.unknown(opcode: opcode, payload: Data(body)), data.count)

@@ -41,6 +41,11 @@ public final class BonjourPublisher {
         self.serviceType = serviceType
     }
 
+    public var isPublishing: Bool {
+        if case .advertising = state { return true }
+        return listener != nil
+    }
+
     public func start(deviceName: String) {
         stop()
 

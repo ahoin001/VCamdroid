@@ -10,8 +10,9 @@ import SwiftUI
 public struct ConnectionScreen: View {
     @ObservedObject var controller: StreamController
     @State private var mode: Mode = .auto
-    @State private var host: String = "192.168.1.10"
+    @State private var host: String = RecentHostsStore.load().first ?? "192.168.1.10"
     @State private var port: String = "6969"
+    @State private var recentHosts: [String] = RecentHostsStore.load()
     @FocusState private var focused: Field?
 
     public init(controller: StreamController) {
@@ -43,6 +44,24 @@ public struct ConnectionScreen: View {
             .padding(Theme.Spacing.lg)
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            recentHosts = RecentHostsStore.load()
+            if mode == .auto {
+                controller.startAutoDiscovery()
+            }
+        }
+        .onDisappear {
+            if mode == .auto, case .disconnected = controller.connectionState {
+                controller.stopAutoDiscovery()
+            }
+        }
+        .onChange(of: mode) { newMode in
+            if newMode == .auto {
+                controller.startAutoDiscovery()
+            } else {
+                controller.stopAutoDiscovery()
+            }
+        }
     }
 
     // MARK: - Header
@@ -127,10 +146,15 @@ public struct ConnectionScreen: View {
                     .font(Theme.Font.headline)
                     .foregroundStyle(Theme.Color.textPrimary)
 
-                Text("Make sure your PC and iPhone are on the same\nWi-Fi network, or connected via USB cable.")
+                Text("Same Wi‑Fi, or USB with Trust unlocked.\nDesktop sets up the USB tunnel automatically.")
                     .font(Theme.Font.body)
                     .foregroundStyle(Theme.Color.textSecondary)
                     .multilineTextAlignment(.center)
+
+                PrimaryButton("Connect via USB", icon: "cable.connector") {
+                    Task { await controller.connectUsb() }
+                }
+                .padding(.top, Theme.Spacing.sm)
             }
 
             Spacer()
@@ -145,6 +169,20 @@ public struct ConnectionScreen: View {
             Text("Windows host")
                 .font(Theme.Font.caption)
                 .foregroundStyle(Theme.Color.textSecondary)
+            if !recentHosts.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Theme.Spacing.xs) {
+                        ForEach(recentHosts, id: \.self) { entry in
+                            Button(entry) { host = entry }
+                                .font(Theme.Font.caption)
+                                .padding(.horizontal, Theme.Spacing.sm)
+                                .padding(.vertical, Theme.Spacing.xxs)
+                                .background(Theme.Color.surfaceElevated)
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+            }
             TextField("", text: $host, prompt: Text("192.168.1.10").foregroundColor(Theme.Color.textTertiary))
                 .font(Theme.Font.body)
                 .foregroundStyle(Theme.Color.textPrimary)
@@ -214,6 +252,8 @@ public struct ConnectionScreen: View {
                     controller.disconnect()
                 default:
                     Task {
+                        RecentHostsStore.remember(host)
+                        recentHosts = RecentHostsStore.load()
                         await controller.connect(host: host, controlPort: UInt16(port) ?? 6969)
                     }
                 }

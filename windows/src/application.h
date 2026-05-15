@@ -36,13 +36,20 @@ private:
 	// Device bridges for USB port forwarding.
 	AdbBridge adbBridge;
 	UsbmuxBridge usbmuxBridge;
+	bool usbDeviceConnected = false;
+	wxTimer* usbPollTimer = nullptr;
 
 	// mDNS auto-discovery for iOS devices on the LAN.
 	std::unique_ptr<Discovery::MdnsBrowser> mdnsBrowser;
 	mutable std::mutex discoveredDevicesMutex;
 	mutable std::map<std::string, Discovery::RawDiscoveryRecord> discoveredDevices;
 
-	StreamOptions& GetCurrentDeviceStreamOptions();
+	StreamOptions* TryGetCurrentDeviceStreamOptions();
+	void RecoverStaleState();
+	void SetupUsbTunnels();
+	void PollUsbDevices();
+	void UpdateUsbStatusLabel() const;
+
 	void BindEventListeners();
 
 	void UpdateAvailableDevices() const;

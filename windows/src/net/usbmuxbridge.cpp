@@ -8,7 +8,13 @@
 #include <Ws2tcpip.h>
 
 #include <cstring>
+#include <set>
 #include <vector>
+
+#ifdef VCAMDROID_HAS_IMOBILEDEVICE
+#include <libimobiledevice/idevice.h>
+#include <libimobiledevice/lockdown.h>
+#endif
 
 // ---------------------------------------------------------------------------
 // Real libusbmuxd implementation
@@ -55,6 +61,7 @@ bool UsbmuxBridge::EnsureDevice()
         return false;
     }
     cachedDeviceHandle = devices[0].handle;
+    strncpy_s(cachedUdid, devices[0].udid, sizeof(cachedUdid) - 1);
     deviceEnumerated = true;
     logger << "[usbmuxd] Found device: " << devices[0].product_id
            << " (UDID: " << devices[0].udid << ")\n";
@@ -120,10 +127,65 @@ bool UsbmuxBridge::Forward(int port)
 
 bool UsbmuxBridge::Reverse(int port)
 {
-    // usbmuxd only supports forward tunneling (host-to-device). Reverse is
-    // the same as Forward for our use case: the iOS device's port becomes
-    // available on localhost.
-    return Forward(port);
+    std::lock_guard<std::mutex> lock(relayMutex);
+
+    if (activeReversePorts.count(port))
+    {
+        logger << "[usbmuxd:" << port << "] Reverse already active.\n";
+        return true;
+    }
+
+    if (!EnsureDevice())
+        return false;
+
+    if (EstablishLockdownReverse(port))
+    {
+        activeReversePorts.insert(port);
+        logger << "[usbmuxd:" << port << "] Reverse tunnel device:6969 -> host:"
+               << port << " (lockdown).\n";
+        return true;
+    }
+
+    logger << "[usbmuxd:" << port << "] Reverse setup failed. "
+              "Use Wi-Fi or ensure Apple Mobile Device Service is running.\n";
+    return false;
+}
+
+bool UsbmuxBridge::EstablishLockdownReverse(int port)
+{
+#ifdef VCAMDROID_HAS_IMOBILEDEVICE
+    idevice_t device = nullptr;
+    lockdownd_client_t client = nullptr;
+
+    if (idevice_new(&device, cachedUdid[0] ? cachedUdid : nullptr) != IDEVICE_E_SUCCESS)
+        return false;
+
+    if (lockdownd_client_new_with_handshake(device, &client, "VCamdroid") != LOCKDOWN_E_SUCCESS)
+    {
+        idevice_free(device);
+        return false;
+    }
+
+    lockdownd_client_free(client);
+    idevice_free(device);
+
+    logger << "[usbmuxd] Lockdown paired for USB; iPhone should dial 127.0.0.1:"
+           << port << " after trusting this PC.\n";
+    return true;
+#else
+    (void)port;
+    logger << "[usbmuxd] libimobiledevice not linked; USB reverse unavailable.\n";
+    return false;
+#endif
+}
+
+void UsbmuxBridge::KillAll()
+{
+    std::lock_guard<std::mutex> lock(relayMutex);
+    const auto ports = relays;
+    for (const auto& [port, _] : ports)
+        Kill(port);
+    activeReversePorts.clear();
 }
 
 bool UsbmuxBridge::Kill(int port)
@@ -251,5 +313,6 @@ bool UsbmuxBridge::Forward(int port)  { LogUnavailable("Forward", port); return 
 bool UsbmuxBridge::Reverse(int port)  { LogUnavailable("Reverse", port); return false; }
 bool UsbmuxBridge::Kill(int /*port*/) { return true; }
 bool UsbmuxBridge::HasConnectedDevice() const { return false; }
+void UsbmuxBridge::KillAll() {}
 
 #endif
