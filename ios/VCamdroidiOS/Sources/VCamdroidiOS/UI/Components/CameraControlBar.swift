@@ -35,18 +35,31 @@ public struct CameraControlBar: View {
             }
             .tint(Theme.Color.accent)
             .onChange(of: portraitOn) { on in
-                controller.setPortraitMode(enabled: on, strength: Int(portraitStrength))
+                controller.setPortraitMode(enabled: on, strength: Int(portraitStrength), promptVideoEffects: on)
             }
 
             if portraitOn {
+                Text("For Apple’s Portrait blur, enable Portrait in Video Effects (a sheet opens when you turn this on). The slider adjusts the on-device fallback while system Portrait is off.")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Color.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    StreamController.presentSystemVideoEffectsPicker()
+                } label: {
+                    Label("Video Effects…", systemImage: "slider.horizontal.3")
+                        .font(Theme.Font.caption)
+                }
+                .buttonStyle(.borderless)
+
                 HStack {
-                    Text("Strength")
+                    Text("Fallback strength")
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Color.textSecondary)
                     Slider(value: $portraitStrength, in: 0...100, step: 1)
                         .tint(Theme.Color.accent)
                         .onChange(of: portraitStrength) { v in
-                            controller.setPortraitMode(enabled: true, strength: Int(v))
+                            controller.setPortraitMode(enabled: true, strength: Int(v), promptVideoEffects: false)
                         }
                 }
             }
