@@ -9,7 +9,7 @@
     "wxwidgets",
     {
       "name": "ffmpeg",
-      "features": ["avcodec", "avformat", "avutil", "swscale"]
+      "features": ["avcodec", "avformat", "swscale"]
     },
     "libusbmuxd",
     "libimobiledevice"

@@ -63,7 +63,7 @@ Release builds use the Gradle **release** configuration as defined in `android/a
 - **Release workflow does not start** — Ensure the push included the tag (`git push origin --tags`). Only tags matching `v*` trigger Release.  
 - **Windows: missing wx / ffmpeg / asio / usbmux headers** — Almost always **manifest vs classic vcpkg paths**: `VcpkgEnableManifest` must be `true` when using `vcpkg.json` so includes come from `windows/vcpkg_installed/...`, not empty `vcpkg/installed/...`. Also confirm the job sets **`VCPKG_ROOT`** to the same path as `run-vcpkg`’s `vcpkgDirectory`.  
 - **Release shows all three jobs red** — Jobs are independent; open each log. If only Windows failed, Android/iOS may have been cancelled or also failed for unrelated reasons (check the first error in each).
-- **Windows: NuGet / GoogleTest errors** — Something is building full `softcam.sln` including tests; restore the composite action’s limited `/t:` list.  
+- **Windows: `ffmpeg does not have required feature avutil`** — The vcpkg **ffmpeg** port no longer exposes an `avutil` feature; libavutil is pulled in with **avcodec** / **avformat**. Remove `avutil` from `windows/vcpkg.json` feature lists (keep `avcodec`, `avformat`, `swscale` as needed).  
 - **CI skipped on a PR** — Check path filters in `ci.yml`; only changes under listed paths run CI. Use **Actions → CI → Run workflow** to force a build.
 
 ## Optional hardening
