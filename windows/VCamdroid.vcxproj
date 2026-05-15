@@ -25,6 +25,12 @@
     <RootNamespace>VCamdroid</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
+  <!-- Without this, MSBuild uses classic $(VCPKG_ROOT)\installed\ while manifest installs go to
+       $(VcpkgManifestRoot)\vcpkg_installed\ — headers appear missing (wx, ffmpeg, asio, …). -->
+  <PropertyGroup Condition="'$(VCPKG_ROOT)' != ''" Label="VcpkgManifest">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestRoot>$(MSBuildProjectDirectory)</VcpkgManifestRoot>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <!-- vcpkg manifest (windows/vcpkg.json): CI sets VCPKG_ROOT; local dev can set VCPKG_ROOT or use "vcpkg integrate install". -->
   <Import Project="$(VCPKG_ROOT)\scripts\buildsystems\msbuild\vcpkg.props" Condition="'$(VCPKG_ROOT)' != ''" />

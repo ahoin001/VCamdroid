@@ -15,6 +15,10 @@ Shared build logic lives in **composite actions** under `.github/actions/` so CI
 - `ios-build` — Homebrew XcodeGen, unsigned archive + IPA  
 - `windows-build` — `run-vcpkg`, Softcam libraries + installer (no test projects), VCamdroid, `package.bat`, zip  
 
+### Why three jobs instead of one sequential job?
+
+The three platforms run **in parallel** on different runners (Ubuntu, macOS, Windows). That **cuts wall-clock time** (slow Windows + vcpkg does not block Android/iOS) and gives **clear logs per platform** when something fails. It does not change correctness; a single job would be simpler to read but slower and harder to retry one OS.
+
 ## Shipping a new version (maintainers)
 
 From the **repository root** (not `ios/VCamdroidiOS`):
@@ -42,7 +46,7 @@ CI matches **GitHub-hosted** images, not necessarily a bleeding-edge dev box.
 | Topic | Expectation |
 |-------|----------------|
 | **Visual Studio** | `windows-latest` is **VS 2022** with MSVC **v143**. `VCamdroid.vcxproj` uses **PlatformToolset v143**. Do not retarget to preview toolsets (e.g. v145) unless you also change CI (e.g. self-hosted runner with that VS). |
-| **vcpkg** | Clone lives at `${{ github.workspace }}/vcpkg` with **`VCPKG_ROOT`** set the same way. `windows/vcpkg.json` must include **`builtin-baseline`** for manifest mode. `VCamdroid.vcxproj` imports `vcpkg.props` / `vcpkg.targets` when `VCPKG_ROOT` is set (CI); local dev can still use `vcpkg integrate install`. |
+| **vcpkg + MSBuild manifest** | `run-vcpkg` installs from `windows/vcpkg.json` into **`windows/vcpkg_installed/<triplet>/`**. MSBuild must use **manifest mode** (`VcpkgEnableManifest=true`) and **`VcpkgManifestRoot`** pointing at `windows/`; otherwise the compiler only sees classic **`$(VCPKG_ROOT)/installed/`**, which does not contain those packages — symptoms: missing `wx/wx.h`, `asio.hpp`, `libavformat/avformat.h`, `usbmuxd.h`. See `windows/VCamdroid.vcxproj` when `VCPKG_ROOT` is set. |
 | **Softcam** | Build only **`BaseClasses;softcamcore;softcam`** from `softcam.sln`, then **`softcam_installer.sln`**. The full solution builds **GoogleTest** NuGet projects that are not restored on CI. |
 | **Timeouts** | Windows job allows **120 minutes** for first-time vcpkg compiles. |
 
@@ -57,7 +61,8 @@ Release builds use the Gradle **release** configuration as defined in `android/a
 ## Troubleshooting
 
 - **Release workflow does not start** — Ensure the push included the tag (`git push origin --tags`). Only tags matching `v*` trigger Release.  
-- **Windows: missing wx / ffmpeg / asio / usbmux headers** — `VCPKG_ROOT` unset or vcpkg imports missing; compare `windows/VCamdroid.vcxproj` and job `env` in `release.yml` / `ci.yml`.  
+- **Windows: missing wx / ffmpeg / asio / usbmux headers** — Almost always **manifest vs classic vcpkg paths**: `VcpkgEnableManifest` must be `true` when using `vcpkg.json` so includes come from `windows/vcpkg_installed/...`, not empty `vcpkg/installed/...`. Also confirm the job sets **`VCPKG_ROOT`** to the same path as `run-vcpkg`’s `vcpkgDirectory`.  
+- **Release shows all three jobs red** — Jobs are independent; open each log. If only Windows failed, Android/iOS may have been cancelled or also failed for unrelated reasons (check the first error in each).
 - **Windows: NuGet / GoogleTest errors** — Something is building full `softcam.sln` including tests; restore the composite action’s limited `/t:` list.  
 - **CI skipped on a PR** — Check path filters in `ci.yml`; only changes under listed paths run CI. Use **Actions → CI → Run workflow** to force a build.
 

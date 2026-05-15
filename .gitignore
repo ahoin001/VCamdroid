@@ -7,3 +7,4 @@ vcpkg/
 *.xcarchive
 ios/VCamdroidiOS/build/
 ios/VCamdroidiOS/VCamdroidiOS.xcodeproj/
+windows/vcpkg_installed/
