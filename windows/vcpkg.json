@@ -6,6 +6,7 @@
   "builtin-baseline": "57d5665ca81cb063946952dbd58f5190cb48216e",
   "dependencies": [
     "asio",
+    "nayuki-qr-code-generator",
     "wxwidgets",
     {
       "name": "ffmpeg",

@@ -3,7 +3,7 @@
 #include <wx/wx.h>
 #include "canvas.h"
 
-#include "qrcodegen.hpp"
+#include <qrcodegen.hpp>
 
 class QrconView : public wxDialog
 {
