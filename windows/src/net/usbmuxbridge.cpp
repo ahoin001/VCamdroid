@@ -181,11 +181,18 @@ bool UsbmuxBridge::EstablishLockdownReverse(int port)
 
 void UsbmuxBridge::KillAll()
 {
-    std::lock_guard<std::mutex> lock(relayMutex);
-    const auto ports = relays;
-    for (const auto& [port, _] : ports)
+    // Snapshot keys only: the map holds non-copyable unique_ptr<Relay>.
+    // Do not call Kill() while holding relayMutex — Kill() locks the same mutex.
+    std::vector<int> forwardPorts;
+    {
+        std::lock_guard<std::mutex> lock(relayMutex);
+        forwardPorts.reserve(relays.size());
+        for (const auto& kv : relays)
+            forwardPorts.push_back(kv.first);
+        activeReversePorts.clear();
+    }
+    for (int port : forwardPorts)
         Kill(port);
-    activeReversePorts.clear();
 }
 
 bool UsbmuxBridge::Kill(int port)

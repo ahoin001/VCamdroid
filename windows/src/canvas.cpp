@@ -75,7 +75,7 @@ void Canvas::ProcessRawFrameAsync(const AVFrame* frame)
 	try {
 		safeFrame.assign(data, data + size);
 	}
-	catch (const std::exception& e) {
+	catch (const std::exception&) {
 		// Allocation failed (out of memory?)
 		isRendering = false;
 		return;

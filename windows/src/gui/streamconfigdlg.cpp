@@ -34,7 +34,7 @@ StreamConfigDlg::StreamConfigDlg(wxWindow* parent,
     {
         resChoice->Append(wxString::Format("%d x %d", res.first, res.second));
     }
-    if (currentConfig.resIndex >= 0 && currentConfig.resIndex < resChoice->GetCount())
+    if (currentConfig.resIndex >= 0 && static_cast<unsigned int>(currentConfig.resIndex) < resChoice->GetCount())
         resChoice->SetSelection(currentConfig.resIndex);
     resChoice->Bind(wxEVT_CHOICE, &StreamConfigDlg::OnResolutionChanged, this);
     qualityGrid->Add(resChoice, 1, wxEXPAND);

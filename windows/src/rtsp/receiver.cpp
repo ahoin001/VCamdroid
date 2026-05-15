@@ -215,7 +215,9 @@ namespace RTSP
 
 			if (duration >= 1000)
 			{
-				stats.fps = frameAccumulator / (duration / 1000);
+				const auto elapsedMs = static_cast<long long>(duration);
+				const auto elapsedSec = (elapsedMs / 1000) > 0 ? elapsedMs / 1000 : 1LL;
+				stats.fps = static_cast<int>(frameAccumulator / elapsedSec);
 				stats.bitrate = (byteAccumulator * 8.0) / 1000000 / (duration / 1000);
 
 				if (onStatsReceivedCallback)

@@ -46,7 +46,7 @@ namespace Serializer
 		auto name = std::string((const char*)& bytes[offset + 2], ReadInt16(bytes));
 
 		// The RTSP url follows after the name
-		offset += 2 + name.size();
+		offset += static_cast<int>(2 + name.size());
 		auto url = std::string((const char*)& bytes[offset + 2], ReadInt16(bytes + offset));
 
 		// iOS clients use the vcmd:// URL scheme. Everything else is treated
@@ -75,7 +75,7 @@ namespace Serializer
 			protocol = "tcp";
 		}
 
-		offset += 2 + url.size();
+		offset += static_cast<int>(2 + url.size());
 		// Represents how many resolutions are provided
 		uint16_t frontResolutionCount = ReadInt16(bytes + offset);
 		offset += 2;
@@ -119,7 +119,7 @@ namespace Serializer
 			// First 2 bytes represent the length of the filter name,
 			// followed by the actual string
 			auto name = std::string((const char*)&bytes[offset + 2], ReadInt16(bytes + offset));
-			offset += 2 + name.size();
+			offset += static_cast<int>(2 + name.size());
 			// And 1 more byte for the category
 			auto cat = static_cast<Video::Filter::Category>(bytes[offset]);
 			offset++;
@@ -174,7 +174,7 @@ namespace Serializer
 		report.severity = bytes[offset++];
 		report.error = std::string((const char*)&bytes[offset + 2], ReadInt16(bytes + offset));
 
-		offset += 2 + report.error.size();
+		offset += static_cast<int>(2 + report.error.size());
 		report.description = std::string((const char*)&bytes[offset + 2], ReadInt16(bytes + offset));
 		
 		return report;
