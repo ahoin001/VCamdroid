@@ -20,7 +20,7 @@ public struct RootView: View {
         switch controller.connectionState {
         case .connected:
             StreamingScreen(controller: controller)
-                .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                .transition(.opacity.combined(with: .scale(scale: 1.01)))
         default:
             ConnectionScreen(controller: controller)
                 .transition(.opacity)

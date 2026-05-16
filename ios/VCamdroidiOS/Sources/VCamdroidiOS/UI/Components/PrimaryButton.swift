@@ -25,7 +25,7 @@ public struct PrimaryButton: View {
             HStack(spacing: Theme.Spacing.xs) {
                 if isLoading {
                     ProgressView()
-                        .tint(Theme.Color.textPrimary)
+                        .tint(.white.opacity(0.95))
                 } else if let icon {
                     Image(systemName: icon)
                 }
@@ -36,12 +36,14 @@ public struct PrimaryButton: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, Theme.Spacing.md)
             .background(
-                LinearGradient(
-                    colors: [Theme.Color.accent, Theme.Color.accent.opacity(0.75)],
-                    startPoint: .top, endPoint: .bottom
-                )
+                RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
+                    .fill(Theme.Color.accent.opacity(0.88))
             )
-            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
+                    .stroke(Theme.Color.accent.opacity(0.35), lineWidth: 1)
+            )
+            .shadow(color: Theme.Color.accent.opacity(0.22), radius: 16, y: 8)
             .opacity(isEnabled ? 1.0 : 0.45)
         }
         .disabled(isLoading)

@@ -24,6 +24,7 @@ public:
 		static const int DS_FHD = 107;
 		static const int DS_QHD = 108;
 		static const int HELP_OBS = 109;
+		static const int HELP_QUICKSTART = 110;
 	};
 
 	Window(Server::HostInfo hostInfo);
@@ -31,6 +32,8 @@ public:
 
 	Canvas* GetCanvas();
 	wxChoice* GetSourceChoice();
+	/// USB vs Wi‑Fi video path for iPhone (`vcmd://`); ignored for Android RTSP.
+	wxChoice* GetIosLinkModeChoice();
 	wxButton* GetStreamOptionsButton();
 
 	// Bottom Bar Controls
@@ -59,6 +62,7 @@ private:
 	Canvas* canvas;
 
 	wxChoice* sourceChoice;
+	wxChoice* iosLinkModeChoice = nullptr;
 	wxButton* streamOptionsButton;
 
 	// Bottom Bar

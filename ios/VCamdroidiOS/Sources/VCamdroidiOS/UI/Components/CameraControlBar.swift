@@ -16,21 +16,33 @@ public struct CameraControlBar: View {
     }
 
     public var body: some View {
-        VStack(spacing: Theme.Spacing.sm) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            Text("While streaming")
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(Theme.Color.textTertiary)
+                .textCase(.uppercase)
+                .tracking(0.8)
+
             portraitSection
+            Divider().overlay(Theme.Color.divider)
             exposureSection
+            Divider().overlay(Theme.Color.divider)
             whiteBalanceSection
         }
         .padding(Theme.Spacing.md)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Theme.Color.cardStroke, lineWidth: 1)
+        )
     }
 
     @ViewBuilder
     private var portraitSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
             Toggle(isOn: $portraitOn) {
-                Label("Portrait Mode", systemImage: "person.crop.circle")
+                Label("Soft background blur", systemImage: "person.crop.circle")
                     .font(Theme.Font.caption)
             }
             .tint(Theme.Color.accent)
@@ -39,7 +51,7 @@ public struct CameraControlBar: View {
             }
 
             if portraitOn {
-                Text("For Apple’s Portrait blur, enable Portrait in Video Effects (a sheet opens when you turn this on). The slider adjusts the on-device fallback while system Portrait is off.")
+                Text("Optional: Apple’s own Portrait effect opens in a sheet. This slider is a calm fallback when that’s off.")
                     .font(Theme.Font.caption)
                     .foregroundStyle(Theme.Color.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -47,13 +59,13 @@ public struct CameraControlBar: View {
                 Button {
                     StreamController.presentSystemVideoEffectsPicker()
                 } label: {
-                    Label("Video Effects…", systemImage: "slider.horizontal.3")
+                    Label("Apple Video Effects…", systemImage: "slider.horizontal.3")
                         .font(Theme.Font.caption)
                 }
                 .buttonStyle(.borderless)
 
                 HStack {
-                    Text("Fallback strength")
+                    Text("Blur strength")
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Color.textSecondary)
                     Slider(value: $portraitStrength, in: 0...100, step: 1)
@@ -70,7 +82,7 @@ public struct CameraControlBar: View {
     private var exposureSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
             HStack {
-                Text("Exposure")
+                Text("Brightness")
                     .font(Theme.Font.caption)
                     .foregroundStyle(Theme.Color.textSecondary)
                 Spacer()
@@ -83,7 +95,7 @@ public struct CameraControlBar: View {
             }
 
             HStack {
-                Text("EV")
+                Text("Light touch")
                     .font(Theme.Font.caption)
                     .foregroundStyle(Theme.Color.textTertiary)
                 Slider(value: $evBias, in: -2...2, step: 0.1)
@@ -93,7 +105,7 @@ public struct CameraControlBar: View {
             }
 
             if manualExposure {
-                Text("Shutter / ISO are controlled from VCamdroid Desktop")
+                Text("Fine shutter & ISO live on your PC — keep both apps open.")
                     .font(Theme.Font.caption)
                     .foregroundStyle(Theme.Color.textTertiary)
             }
@@ -104,7 +116,7 @@ public struct CameraControlBar: View {
     private var whiteBalanceSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
             HStack {
-                Text("White balance")
+                Text("Color warmth")
                     .font(Theme.Font.caption)
                     .foregroundStyle(Theme.Color.textSecondary)
                 Spacer()
@@ -118,7 +130,7 @@ public struct CameraControlBar: View {
 
             if manualWB {
                 HStack {
-                    Text("Temp")
+                    Text("Warm ⟷ cool")
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Color.textTertiary)
                     Slider(value: $wbTemp, in: 2500...10000, step: 100)

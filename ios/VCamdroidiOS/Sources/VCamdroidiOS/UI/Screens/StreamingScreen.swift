@@ -58,10 +58,8 @@ public struct StreamingScreen: View {
                     .frame(width: 12, height: 12)
                     .modifier(StudioPulseModifier())
                 Text("Studio mode")
-                    .font(Theme.Font.caption)
-                    .foregroundStyle(Theme.Color.textTertiary)
-                    .textCase(.uppercase)
-                    .kerning(2)
+                    .font(Theme.Font.body)
+                    .foregroundStyle(Theme.Color.textSecondary)
                 Spacer()
             }
         }
@@ -70,12 +68,17 @@ public struct StreamingScreen: View {
     @ViewBuilder
     private var statusOverlay: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                Text("Live preview")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Theme.Color.textTertiary)
+                    .textCase(.uppercase)
+                    .tracking(0.8)
                 streamingPill
                 HStack(spacing: Theme.Spacing.xs) {
                     MetricBadge(label: "FPS", value: String(format: "%.0f", controller.lastMetrics.fps))
                     MetricBadge(label: "Mbps", value: String(format: "%.1f", controller.lastMetrics.bitrateKbps / 1_000))
-                    MetricBadge(label: "Res", value: "\(controller.configuration.width)×\(controller.configuration.height)")
+                    MetricBadge(label: "Size", value: "\(controller.configuration.width)×\(controller.configuration.height)")
                     if controller.microphoneEnabled {
                         MetricBadge(label: "Mic", value: "On")
                     }
@@ -83,6 +86,16 @@ public struct StreamingScreen: View {
             }
             Spacer()
         }
+        .padding(Theme.Spacing.md)
+        .background {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Theme.Color.surface.opacity(0.42))
+        }
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Theme.Color.cardStroke, lineWidth: 1)
+        )
         .opacity(controller.studioModeEnabled ? 0.0 : 1.0)
     }
 
@@ -90,11 +103,11 @@ public struct StreamingScreen: View {
     private var streamingPill: some View {
         switch controller.videoState {
         case .streaming:
-            StatusPill("Streaming", icon: "wave.3.right", tone: .success)
+            StatusPill("Sending video", icon: "wave.3.right", tone: .success)
         case .listening:
-            StatusPill("Waiting for PC", icon: "antenna.radiowaves.left.and.right", tone: .accent)
+            StatusPill("Waiting for your PC", icon: "antenna.radiowaves.left.and.right", tone: .accent)
         case .idle:
-            StatusPill("Idle", icon: "pause.circle", tone: .neutral)
+            StatusPill("Paused", icon: "pause.circle", tone: .neutral)
         case .failed(let reason):
             StatusPill(reason, icon: "exclamationmark.triangle.fill", tone: .danger)
         }
@@ -102,21 +115,32 @@ public struct StreamingScreen: View {
 
     @ViewBuilder
     private var bottomBar: some View {
-        HStack {
-            Spacer()
+        VStack(spacing: Theme.Spacing.xs) {
             Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 controller.disconnect()
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(Theme.Spacing.md)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
+                HStack(spacing: Theme.Spacing.sm) {
+                    Image(systemName: "phone.down.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text("End session")
+                        .font(Theme.Font.caption)
+                }
+                .foregroundStyle(Color.white.opacity(0.94))
+                .padding(.horizontal, Theme.Spacing.xl)
+                .padding(.vertical, Theme.Spacing.md)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Theme.Color.cardStroke, lineWidth: 1)
+                )
             }
-            Spacer()
+            .buttonStyle(.plain)
+            Text("Returns you to the gentle setup screen.")
+                .font(.system(size: 11, weight: .regular, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.58))
         }
+        .frame(maxWidth: .infinity)
         .opacity(controller.studioModeEnabled ? 0.0 : 1.0)
     }
 

@@ -80,7 +80,7 @@ namespace RTSP
 	{
 		if (!HasValidStreamingDevice())
 			return false;
-		SendToActiveDevice( bytes, size);
+		server.Send(streamingDevice, bytes, size);
 		return true;
 	}
 
@@ -98,12 +98,13 @@ namespace RTSP
 		}
 	}
 
-	void Manager::Connect2Stream(int descriptorId, const StreamOptions& options)
+	void Manager::Connect2Stream(int descriptorId, const StreamOptions& options, const std::string* streamUrlOverride)
 	{
 		this->streamingDevice = descriptorId;
 
 		auto& descriptor = descriptors[descriptorId];
-		auto& url = descriptor.url();
+		const std::string& url =
+		    (streamUrlOverride && !streamUrlOverride->empty()) ? *streamUrlOverride : descriptor.url();
 
 		logger << "[RTSP Manager] Connecting to stream " << url << "\n";
 

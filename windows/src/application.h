@@ -49,6 +49,10 @@ private:
 	void SetupUsbTunnels();
 	void PollUsbDevices();
 	void UpdateUsbStatusLabel() const;
+	std::string EffectiveIosVideoUrl(const DeviceDescriptor& descriptor) const;
+	void ReapplyIosControlsAfterStreamConnect(const DeviceDescriptor& desc, StreamOptions& state);
+	void TryReconnectIosAfterUsbAutoTransportChange();
+	void OnIosLinkModeChanged(wxCommandEvent& event);
 
 	void BindEventListeners();
 

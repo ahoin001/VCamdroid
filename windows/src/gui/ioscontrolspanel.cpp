@@ -71,7 +71,7 @@ IosControlsPanel::IosControlsPanel(wxWindow* parent, const StreamOptions& initia
 {
     auto* root = new wxBoxSizer(wxVERTICAL);
 
-    auto* outerBox = new wxStaticBoxSizer(wxVERTICAL, this, "iOS Premium Camera Controls");
+    auto* outerBox = new wxStaticBoxSizer(wxVERTICAL, this, "Fine-tune picture");
 
     auto* inner = new wxBoxSizer(wxVERTICAL);
 

@@ -68,7 +68,8 @@ namespace RTSP
 		void AddDescriptor(DeviceDescriptor& descriptor);
 		void RemoveDescriptor(DeviceDescriptor& descriptor);
 
-		void Connect2Stream(int descriptorId, const StreamOptions& options);
+		/// @param streamUrlOverride If non-null and non-empty, used for the video receiver only (control channel unchanged).
+		void Connect2Stream(int descriptorId, const StreamOptions& options, const std::string* streamUrlOverride = nullptr);
 		void StopAll();
 		void ClearStreamingDevice();
 

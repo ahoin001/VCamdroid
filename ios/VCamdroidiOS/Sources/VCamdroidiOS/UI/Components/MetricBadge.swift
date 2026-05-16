@@ -24,7 +24,13 @@ public struct MetricBadge: View {
         }
         .padding(.horizontal, Theme.Spacing.sm)
         .padding(.vertical, Theme.Spacing.xs)
-        .background(Theme.Color.surface.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(Theme.Color.surfaceElevated.opacity(0.45))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .stroke(Theme.Color.cardStroke, lineWidth: 1)
+        )
     }
 }

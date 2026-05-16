@@ -23,25 +23,26 @@ public struct ConnectionScreen: View {
         ZStack {
             Theme.Color.background.ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                header
-                Spacer().frame(height: Theme.Spacing.md)
-                modePicker
-                Spacer().frame(height: Theme.Spacing.xs)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                    header
+                    gentleStepsCard
+                    modePicker
 
-                switch mode {
-                case .auto:
-                    autoDiscoveryView
-                case .manual:
-                    hostField
-                    portField
+                    switch mode {
+                    case .auto:
+                        autoDiscoveryView
+                    case .manual:
+                        manualFieldsCard
+                    }
+
+                    statusBar
+                    connectButton
                 }
-
-                Spacer()
-                statusBar
-                connectButton
+                .padding(.horizontal, Theme.Spacing.lg)
+                .padding(.vertical, Theme.Spacing.lg)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(Theme.Spacing.lg)
         }
         .preferredColorScheme(.dark)
         .onAppear {
@@ -72,9 +73,47 @@ public struct ConnectionScreen: View {
             Text("VCamdroid")
                 .font(Theme.Font.titleLarge)
                 .foregroundStyle(Theme.Color.textPrimary)
-            Text("Use your iPhone as a Windows webcam")
+            Text("Turn your iPhone into a gentle, reliable webcam for your PC.")
                 .font(Theme.Font.body)
                 .foregroundStyle(Theme.Color.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// Short, low-friction orientation for people who skimp instructions.
+    @ViewBuilder
+    private var gentleStepsCard: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            Text("How it works")
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Color.textSecondary)
+            stepRow(number: "1", text: "Open VCamdroid on your Windows PC and leave it running.")
+            stepRow(number: "2", text: "Come back here — stay on this screen while connecting.")
+            stepRow(number: "3", text: "On the PC, choose your iPhone from the camera list.")
+        }
+        .padding(Theme.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Color.surface)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
+                .stroke(Theme.Color.cardStroke, lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private func stepRow(number: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+            Text(number)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(Theme.Color.accent)
+                .frame(width: 22, height: 22)
+                .background(Theme.Color.accent.opacity(0.14))
+                .clipShape(Circle())
+            Text(text)
+                .font(Theme.Font.body)
+                .foregroundStyle(Theme.Color.textPrimary.opacity(0.9))
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -82,35 +121,50 @@ public struct ConnectionScreen: View {
 
     @ViewBuilder
     private var modePicker: some View {
-        HStack(spacing: 0) {
-            modeTab("Auto", systemImage: "antenna.radiowaves.left.and.right", isSelected: mode == .auto) {
-                withAnimation(.easeInOut(duration: 0.2)) { mode = .auto }
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+            Text("Connection style")
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Color.textSecondary)
+            HStack(spacing: 0) {
+                modeTab(title: "Easy", subtitle: "Wi‑Fi or USB", systemImage: "sparkles", isSelected: mode == .auto) {
+                    withAnimation(.easeInOut(duration: 0.22)) { mode = .auto }
+                }
+                modeTab(title: "Custom", subtitle: "Type PC address", systemImage: "keyboard", isSelected: mode == .manual) {
+                    withAnimation(.easeInOut(duration: 0.22)) { mode = .manual }
+                }
             }
-            modeTab("Manual", systemImage: "keyboard", isSelected: mode == .manual) {
-                withAnimation(.easeInOut(duration: 0.2)) { mode = .manual }
-            }
+            .background(Theme.Color.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Theme.Color.cardStroke, lineWidth: 1)
+            )
         }
-        .background(Theme.Color.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     @ViewBuilder
-    private func modeTab(_ title: String, systemImage: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func modeTab(title: String, subtitle: String, systemImage: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: Theme.Spacing.xxs) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .semibold))
-                Text(title)
-                    .font(Theme.Font.caption)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: Theme.Spacing.xxs) {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 13, weight: .medium))
+                    Text(title)
+                        .font(Theme.Font.caption)
+                }
+                Text(subtitle)
+                    .font(.system(size: 11, weight: .regular, design: .rounded))
+                    .foregroundStyle(Theme.Color.textTertiary)
             }
-            .foregroundStyle(isSelected ? Theme.Color.textPrimary : Theme.Color.textTertiary)
-            .frame(maxWidth: .infinity)
+            .foregroundStyle(isSelected ? Theme.Color.textPrimary : Theme.Color.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, Theme.Spacing.sm)
-            .background(isSelected ? Theme.Color.surfaceElevated : .clear)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .padding(.horizontal, Theme.Spacing.md)
+            .background(isSelected ? Theme.Color.surfaceElevated : SwiftUI.Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
         .buttonStyle(.plain)
-        .padding(2)
+        .padding(3)
     }
 
     // MARK: - Auto discovery view
@@ -118,47 +172,66 @@ public struct ConnectionScreen: View {
     @ViewBuilder
     private var autoDiscoveryView: some View {
         VStack(spacing: Theme.Spacing.lg) {
-            Spacer()
-
             VStack(spacing: Theme.Spacing.md) {
                 ZStack {
-                    // Pulsing rings
                     ForEach(0..<3, id: \.self) { i in
                         Circle()
-                            .stroke(Theme.Color.accent.opacity(0.15), lineWidth: 1.5)
+                            .stroke(Theme.Color.accent.opacity(0.12), lineWidth: 1.5)
                             .frame(width: CGFloat(80 + i * 40), height: CGFloat(80 + i * 40))
-                            .scaleEffect(controller.connectionState == .connecting ? 1.15 : 1.0)
+                            .scaleEffect(controller.connectionState == .connecting ? 1.12 : 1.0)
                             .opacity(controller.connectionState == .connecting ? 0.0 : 1.0)
                             .animation(
-                                .easeInOut(duration: 2.0)
-                                .repeatForever(autoreverses: true)
-                                .delay(Double(i) * 0.4),
+                                .easeInOut(duration: 2.2)
+                                    .repeatForever(autoreverses: true)
+                                    .delay(Double(i) * 0.45),
                                 value: controller.connectionState
                             )
                     }
 
                     Image(systemName: "iphone.radiowaves.left.and.right")
-                        .font(.system(size: 36, weight: .light))
-                        .foregroundStyle(Theme.Color.accent)
+                        .font(.system(size: 34, weight: .light))
+                        .foregroundStyle(Theme.Color.accent.opacity(0.95))
                 }
 
-                Text("Waiting for VCamdroid Desktop")
+                Text("Ready when you are")
                     .font(Theme.Font.headline)
                     .foregroundStyle(Theme.Color.textPrimary)
 
-                Text("Same Wi‑Fi, or USB with Trust unlocked.\nDesktop sets up the USB tunnel automatically.")
+                Text("Your PC can find this phone over Wi‑Fi.\nWith a cable, tap below — your PC finishes the rest.")
                     .font(Theme.Font.body)
                     .foregroundStyle(Theme.Color.textSecondary)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                PrimaryButton("Connect via USB", icon: "cable.connector") {
+                PrimaryButton("Use USB cable", icon: "cable.connector") {
                     Task { await controller.connectUsb() }
                 }
-                .padding(.top, Theme.Spacing.sm)
+                .padding(.top, Theme.Spacing.xs)
             }
-
-            Spacer()
+            .padding(.vertical, Theme.Spacing.md)
         }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var manualFieldsCard: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            Text("If your network hides automatic discovery, enter what your PC shows under Connect → address.")
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Color.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            hostField
+            portField
+        }
+        .padding(Theme.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Color.surface)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
+                .stroke(Theme.Color.cardStroke, lineWidth: 1)
+        )
     }
 
     // MARK: - Manual fields
@@ -166,7 +239,7 @@ public struct ConnectionScreen: View {
     @ViewBuilder
     private var hostField: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
-            Text("Windows host")
+            Text("Windows PC address")
                 .font(Theme.Font.caption)
                 .foregroundStyle(Theme.Color.textSecondary)
             if !recentHosts.isEmpty {
@@ -200,7 +273,7 @@ public struct ConnectionScreen: View {
     @ViewBuilder
     private var portField: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
-            Text("Control port")
+            Text("Port (usually leave as-is)")
                 .font(Theme.Font.caption)
                 .foregroundStyle(Theme.Color.textSecondary)
             TextField("", text: $port, prompt: Text("6969").foregroundColor(Theme.Color.textTertiary))
@@ -223,12 +296,12 @@ public struct ConnectionScreen: View {
             switch controller.connectionState {
             case .disconnected:
                 if mode == .auto {
-                    StatusPill("Broadcasting", icon: "antenna.radiowaves.left.and.right", tone: .accent)
+                    StatusPill("Sharing quietly…", icon: "leaf", tone: .accent)
                 } else {
-                    StatusPill("Idle", icon: "circle", tone: .neutral)
+                    StatusPill("Not connected", icon: "moon.zzz", tone: .neutral)
                 }
             case .connecting:
-                StatusPill("Connecting...", icon: "antenna.radiowaves.left.and.right", tone: .warning)
+                StatusPill("Connecting gently…", icon: "antenna.radiowaves.left.and.right", tone: .warning)
             case .connected(let host, let port):
                 StatusPill("\(host):\(port)", icon: "checkmark.circle.fill", tone: .success)
             case .failed(let reason):
@@ -272,8 +345,8 @@ public struct ConnectionScreen: View {
     private var connectButtonTitle: String {
         switch controller.connectionState {
         case .connected: return "Disconnect"
-        case .connecting: return "Connecting..."
-        default: return "Connect"
+        case .connecting: return "Connecting…"
+        default: return "Connect to PC"
         }
     }
 

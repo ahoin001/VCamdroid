@@ -6,9 +6,9 @@ CameraDockPanel::CameraDockPanel(wxWindow* parent)
     : wxPanel(parent, wxID_ANY)
 {
     auto* root = new wxBoxSizer(wxVERTICAL);
-    auto* label = new wxStaticText(this, wxID_ANY, "Camera controls");
+    auto* label = new wxStaticText(this, wxID_ANY, "Picture controls");
     wxFont f = label->GetFont();
-    f.SetWeight(wxFONTWEIGHT_BOLD);
+    f.SetWeight(wxFONTWEIGHT_SEMIBOLD);
     label->SetFont(f);
     root->Add(label, 0, wxLEFT | wxRIGHT | wxTOP, 8);
 
@@ -16,7 +16,7 @@ CameraDockPanel::CameraDockPanel(wxWindow* parent)
 
     placeholderLabel = new wxStaticText(
         this, wxID_ANY,
-        "Connect an iPhone stream to adjust Portrait Mode, exposure, and white balance.");
+        "When your iPhone is streaming, finer lens and color tools appear here.");
     placeholderLabel->Wrap(360);
     root->Add(placeholderLabel, 0, wxALL, 10);
 

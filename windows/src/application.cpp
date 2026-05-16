@@ -12,6 +12,30 @@
 #include "settings.h"
 #include "video/guipreviewscaler.h"
 #include <iomanip>
+#include <regex>
+
+namespace
+{
+
+std::string RewriteVcmdHost(const std::string& url, const char* newHost)
+{
+	try
+	{
+		static const std::regex pattern(R"(^(vcmd://)([^:/]+)(:\d+)(/.*)?$)",
+			std::regex_constants::icase | std::regex_constants::ECMAScript);
+		std::smatch m;
+		if (!std::regex_match(url, m, pattern))
+			return url;
+		const std::string tail = m[4].matched ? m[4].str() : "";
+		return std::string(m[1].str()) + newHost + m[3].str() + tail;
+	}
+	catch (...)
+	{
+		return url;
+	}
+}
+
+} // namespace
 
 Application::Application()
 {
@@ -22,6 +46,10 @@ Application::Application()
 	
 	Settings::Load();
 	stateRegistry = Settings::GetDeviceStates();
+
+	const int linkMode = Settings::Get("IOS_LINK_MODE");
+	if (linkMode < 0 || linkMode > 2)
+		Settings::Set("IOS_LINK_MODE", 0);
 }
 
 void Application::RecoverStaleState()
@@ -41,6 +69,7 @@ void Application::SetupUsbTunnels()
 	usbmuxBridge.Forward(8554);
 	usbDeviceConnected = true;
 	UpdateUsbStatusLabel();
+	TryReconnectIosAfterUsbAutoTransportChange();
 }
 
 void Application::PollUsbDevices()
@@ -54,6 +83,7 @@ void Application::PollUsbDevices()
 		usbmuxBridge.Kill(8554);
 		usbDeviceConnected = false;
 		UpdateUsbStatusLabel();
+		TryReconnectIosAfterUsbAutoTransportChange();
 	}
 }
 
@@ -62,12 +92,106 @@ void Application::UpdateUsbStatusLabel() const
 	if (!mainWindow || !mainWindow->GetUsbStatusText())
 		return;
 
+	const int modeRaw = Settings::Get("IOS_LINK_MODE");
+	const int mode = (modeRaw >= 0 && modeRaw <= 2) ? modeRaw : 0;
+	const char* videoHint = "Video path: Auto";
+	if (mode == 1)
+		videoHint = "Video path: USB tunnel";
+	else if (mode == 2)
+		videoHint = "Video path: Wi-Fi";
+
 	if (usbDeviceConnected)
-		mainWindow->GetUsbStatusText()->SetLabel("iPhone connected (USB)");
+		mainWindow->GetUsbStatusText()->SetLabel(
+			wxString::Format("iPhone connected (USB) · %s", videoHint));
 	else if (usbmuxBridge.HasConnectedDevice())
-		mainWindow->GetUsbStatusText()->SetLabel("iPhone detected (USB) — setting up tunnel…");
+		mainWindow->GetUsbStatusText()->SetLabel(
+			wxString::Format("iPhone detected (USB) — tunnel… · %s", videoHint));
 	else
-		mainWindow->GetUsbStatusText()->SetLabel("USB: waiting for iPhone (install Apple Devices / iTunes if needed)");
+		mainWindow->GetUsbStatusText()->SetLabel(
+			wxString::Format("USB: no iPhone · %s", videoHint));
+}
+
+std::string Application::EffectiveIosVideoUrl(const DeviceDescriptor& descriptor) const
+{
+	const std::string& url = descriptor.url();
+	if (!descriptor.isiOS())
+		return url;
+
+	const int modeRaw = Settings::Get("IOS_LINK_MODE");
+	const int mode = (modeRaw >= 0 && modeRaw <= 2) ? modeRaw : 0;
+	const bool usbCable = usbmuxBridge.HasConnectedDevice();
+
+	bool useLoopback = false;
+	if (mode == 1)
+		useLoopback = true;
+	else if (mode == 2)
+		useLoopback = false;
+	else
+		useLoopback = usbCable;
+
+	if (!useLoopback)
+		return url;
+
+	return RewriteVcmdHost(url, "127.0.0.1");
+}
+
+void Application::ReapplyIosControlsAfterStreamConnect(const DeviceDescriptor& desc, StreamOptions& state)
+{
+	if (!rtspManager || !desc.isiOS())
+		return;
+
+	rtspManager->SetLensZoom(state.iosLensZoom);
+	if (state.iosExposureMode == StreamOptions::ExposureMode::Manual)
+		rtspManager->SetExposure(state.iosExposureDurationSeconds, state.iosExposureISO);
+	rtspManager->SetExposureCompensation(state.iosExposureCompensation);
+	if (state.iosWhiteBalanceMode == StreamOptions::WhiteBalanceMode::Manual)
+		rtspManager->SetWhiteBalance(state.iosWhiteBalanceTemperatureK, state.iosWhiteBalanceTint);
+	rtspManager->SetStabilizationMode(state.iosStabilizationMode);
+	if (state.iosFocusLockPosition >= 0.0f)
+		rtspManager->SetFocusLock(state.iosFocusLockPosition);
+	rtspManager->SetPortraitMode(state.iosPortraitModeEnabled, static_cast<uint8_t>(state.iosPortraitStrength));
+}
+
+void Application::TryReconnectIosAfterUsbAutoTransportChange()
+{
+	const int modeRaw = Settings::Get("IOS_LINK_MODE");
+	const int mode = (modeRaw >= 0 && modeRaw <= 2) ? modeRaw : 0;
+	if (mode != 0)
+		return;
+
+	if (!rtspManager || !rtspManager->HasValidStreamingDevice())
+		return;
+
+	const int idx = rtspManager->GetStreamingDevice();
+	const auto& desc = rtspManager->GetDescriptors()[idx];
+	if (!desc.isiOS())
+		return;
+
+	auto& state = stateRegistry[desc.name()];
+	std::string effectiveUrl = EffectiveIosVideoUrl(desc);
+	rtspManager->Connect2Stream(idx, state, &effectiveUrl);
+	ReapplyIosControlsAfterStreamConnect(desc, state);
+}
+
+void Application::OnIosLinkModeChanged(wxCommandEvent&)
+{
+	const int sel = mainWindow->GetIosLinkModeChoice()->GetSelection();
+	Settings::Set("IOS_LINK_MODE", sel);
+	Settings::Save();
+	UpdateUsbStatusLabel();
+
+	if (!rtspManager || !rtspManager->HasValidStreamingDevice())
+		return;
+
+	const int idx = rtspManager->GetStreamingDevice();
+	const auto& desc = rtspManager->GetDescriptors()[idx];
+	if (!desc.isiOS())
+		return;
+
+	auto& state = stateRegistry[desc.name()];
+	std::string effectiveUrl = EffectiveIosVideoUrl(desc);
+	rtspManager->Connect2Stream(idx, state, &effectiveUrl);
+	ReapplyIosControlsAfterStreamConnect(desc, state);
 }
 
 bool Application::OnInit()
@@ -192,6 +316,7 @@ void Application::BindEventListeners()
 	mainWindow->Bind(wxEVT_MENU, &Application::OnMenuEvent, this);
 
 	mainWindow->GetSourceChoice()->Bind(wxEVT_CHOICE, &Application::OnSourceChanged, this);
+	mainWindow->GetIosLinkModeChoice()->Bind(wxEVT_CHOICE, &Application::OnIosLinkModeChanged, this);
 	mainWindow->GetAdjustmentsButton()->Bind(wxEVT_BUTTON, &Application::ShowAdjustmentsDialog, this);
 	mainWindow->GetStreamOptionsButton()->Bind(wxEVT_BUTTON, &Application::ShowStreamConfigDialog, this);
 
@@ -394,7 +519,7 @@ void Application::UpdateAvailableDevices() const
 	}
 	else
 	{
-		choice->Append("Select device");
+		choice->Append("Choose your phone…");
 
 		// Connected devices first.
 		for (auto& desc : devices)
@@ -402,7 +527,7 @@ void Application::UpdateAvailableDevices() const
 
 		// Discovered-but-not-connected iOS devices (via mDNS).
 		for (const auto& name : discoveredNames)
-			choice->Append(name + "  (Wi-Fi)");
+			choice->Append(name + "  (LAN — connect phone app first)");
 
 		if (currentSelectionIndex >= 0 && currentSelectionIndex < (int)devices.size())
 		{
@@ -468,32 +593,69 @@ void Application::OnMenuEvent(wxCommandEvent& event)
 			break;
 		}
 
-		case Window::MenuIDs::HELP_OBS:
+		case Window::MenuIDs::HELP_QUICKSTART:
 		{
 			wxMessageBox(
-				"OBS / Zoom / Teams setup:\n\n"
-				"1. Run install.bat once to register the Softcam virtual camera.\n"
-				"2. In OBS: Sources → Video Capture Device → \"VCamdroid Camera\" (or Softcam).\n"
-				"3. Connect your iPhone in the VCamdroid iOS app (Auto, USB, or Manual).\n"
-				"4. Select your phone in the Source dropdown on this window.\n\n"
-				"No OBS plugin is required for V1.",
-				"Using VCamdroid in OBS",
+				"Welcome — here's the gentle path:\n\n"
+				"• Leave VCamdroid open on this PC.\n"
+				"• On your iPhone, open VCamdroid and stay on the welcome screen "
+				"(or choose USB if you're plugged in).\n"
+				"• Under \"Your camera\", choose your iPhone.\n"
+				"• Set \"Video path\" to match the phone: Automatic usually works well; "
+				"USB when wired; Wi-Fi when wireless on the same network.\n"
+				"• In OBS, Zoom, or Teams, pick \"VCamdroid Camera\" (run install.bat once first).\n\n"
+				"Tip: names that say \"LAN\" are only hints until the phone connects.",
+				"Quick start",
 				wxOK | wxICON_INFORMATION,
 				mainWindow);
 			break;
 		}
+
+		case Window::MenuIDs::HELP_OBS:
+		{
+			wxMessageBox(
+				"Using VCamdroid with other apps:\n\n"
+				"1. Run install.bat once so Windows sees \"VCamdroid Camera\".\n"
+				"2. In OBS: Sources → Video Capture Device → \"VCamdroid Camera\".\n"
+				"3. Match \"Video path\" here with your iPhone (USB vs Wi‑Fi).\n"
+				"4. Connect from the VCamdroid iPhone app.\n"
+				"5. Choose your phone under \"Your camera\" on this window.\n\n"
+				"No extra OBS plug-in is needed for this version.",
+				"OBS, Zoom & Teams",
+				wxOK | wxICON_INFORMATION,
+				mainWindow);
+			break;
+		}
+
+		case wxID_ABOUT:
+			wxMessageBox(
+				"VCamdroid turns your iPhone into a calm, capable webcam for Windows.",
+				"About VCamdroid",
+				wxOK | wxICON_INFORMATION,
+				mainWindow);
+			break;
+
+		case wxID_EXIT:
+			if (mainWindow)
+				mainWindow->Close();
+			break;
+
+		default:
+			event.Skip();
+			break;
 	}
 }
 
 void Application::OnDiscoveredDeviceSelected(const Discovery::RawDiscoveryRecord& record)
 {
-	logger << "[app] Connecting to discovered iOS device: " << record.instanceName
-	       << " @ " << record.host << ":" << record.controlPort << "\n";
+	logger << "[app] Bonjour discovery selected (not a TCP connection): " << record.instanceName << " @ "
+	       << record.host << ":" << record.controlPort << "\n";
 
 	mainWindow->GetTaskbarIcon()->ShowBalloon(
-		"Connecting to " + record.instanceName,
-		"Attempting Wi-Fi connection to " + record.host + ":" + std::to_string(record.controlPort),
-		5, wxICON_INFORMATION);
+		record.instanceName + " (LAN)",
+		"This row only lists Bonjour discovery. Open VCamdroid on the phone and connect to this PC first — "
+		"then choose your phone here — skip rows that mention \"LAN\" until you've connected.",
+		8, wxICON_INFORMATION);
 }
 
 void Application::OnSourceChanged(wxEvent& event)
@@ -566,7 +728,15 @@ void Application::OnSourceChanged(wxEvent& event)
 		mainWindow->GetTaskbarIcon()->ShowBalloon("Error", "Device reported no supported resolutions.", 10, wxICON_WARNING);
 	}
 
-	rtspManager->Connect2Stream(deviceId, state);
+	std::string iosEffectiveUrl;
+	const std::string* iosUrlPtr = nullptr;
+	if (descriptor.isiOS())
+	{
+		iosEffectiveUrl = EffectiveIosVideoUrl(descriptor);
+		iosUrlPtr = &iosEffectiveUrl;
+	}
+
+	rtspManager->Connect2Stream(deviceId, state, iosUrlPtr);
 
 	if (mainWindow->GetCameraDockPanel())
 		mainWindow->GetCameraDockPanel()->SetVisibleForPlatform(descriptor.isiOS(), true);
@@ -578,20 +748,7 @@ void Application::OnSourceChanged(wxEvent& event)
 	const float displayedZoom = descriptor.isiOS() ? state.iosLensZoom : state.zoom;
 	mainWindow->GetZoomLevelLabel()->SetLabelText(wxString::Format("%.1fx", displayedZoom));
 
-	// Push the cached iOS state to the freshly-activated device so the user
-	// sees the same image they saw last time.
-	if (descriptor.isiOS()) {
-		rtspManager->SetLensZoom(state.iosLensZoom);
-		if (state.iosExposureMode == StreamOptions::ExposureMode::Manual)
-			rtspManager->SetExposure(state.iosExposureDurationSeconds, state.iosExposureISO);
-		rtspManager->SetExposureCompensation(state.iosExposureCompensation);
-		if (state.iosWhiteBalanceMode == StreamOptions::WhiteBalanceMode::Manual)
-			rtspManager->SetWhiteBalance(state.iosWhiteBalanceTemperatureK, state.iosWhiteBalanceTint);
-		rtspManager->SetStabilizationMode(state.iosStabilizationMode);
-		if (state.iosFocusLockPosition >= 0.0f)
-			rtspManager->SetFocusLock(state.iosFocusLockPosition);
-		rtspManager->SetPortraitMode(state.iosPortraitModeEnabled, static_cast<uint8_t>(state.iosPortraitStrength));
-	}
+	ReapplyIosControlsAfterStreamConnect(descriptor, state);
 }
 
 void Application::OnWindowCloseEvent(wxCloseEvent& event)
